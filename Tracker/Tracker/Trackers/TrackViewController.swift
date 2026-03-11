@@ -1,33 +1,45 @@
 //
-//  ViewController.swift
-//  Tracker
-//
-//  Created by Oschepkov Aleksandr on 07.03.2026.
+//  TrackViewController.swift
 //
 
 import UIKit
 
-class TrackViewController: UIViewController {
-//MARK: Mock Data
-    private let items = [
-           ("Поставить расписание", "0 дней"),
-           ("Настроить дежурства", "2 дня")
-       ]
+// Протокол для передачи данных назад (убедитесь, что он совпадает с тем, что в NewHabitViewController)
+protocol TrackViewControllerDelegate: AnyObject {
+    func didTrackers(_ trackers: [Tracker])
+}
+
+// Добавляем соответствие протоколу NewHabitViewControllerDelegate
+class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     
-    //MARK: Private
+    // MARK: - Public Properties
+    var categories: [TrackerCategory] = []
+    var completedTrackers: [TrackerRecord] = []
+    
+    // Убираем это свойство, так как TrackViewController САМ является делегатом
+    // weak var delegate: NewHabitViewControllerDelegate?
+    
+    // MARK: - UI Elements
+    // ... (код элементов без изменений) ...
+    
     private lazy var addTrack: UIButton = {
         let addTrack = UIButton()
         addTrack.setImage(UIImage(resource: .addTracker), for: .normal)
         addTrack.contentMode = .scaleAspectFit
         addTrack.accessibilityIdentifier = "addTracker"
+        addTrack.addTarget(self, action: #selector(tapAddTrack), for: .touchUpInside)
+        addTrack.translatesAutoresizingMaskIntoConstraints = false
         return addTrack
     }()
+    
     private lazy var nameFunction: UILabel = {
         let nameFunction = UILabel()
         nameFunction.text = "Трекеры"
-        nameFunction.font = .systemFont(ofSize: 34)
+        nameFunction.font = .systemFont(ofSize: 34, weight: .bold)
+        nameFunction.translatesAutoresizingMaskIntoConstraints = false
         return nameFunction
     }()
+    
     private lazy var dymmy: UIImageView = {
         let dymmy = UIImageView()
         dymmy.contentMode = .scaleAspectFit
@@ -35,105 +47,131 @@ class TrackViewController: UIViewController {
         dymmy.translatesAutoresizingMaskIntoConstraints = false
         return dymmy
     }()
-    let datePicker = UIDatePicker()
+    
+    let datePicker: UIDatePicker = {
+        let picker = UIDatePicker()
+        picker.datePickerMode = .date
+        picker.preferredDatePickerStyle = .compact
+        picker.translatesAutoresizingMaskIntoConstraints = false
+        return picker
+    }()
+    
     let collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
-    var categories: [TrackerCategory] = []
-    var completedTrackers: [TrackerRecord] = []
-    var trackRecord: TrackerRecord?
-    var trackCategory: TrackerCategory?
-    var track: Tracker?
     
-//MARK: Configure Action
-    @objc func tapAddTrack() {
-        let secondVC = CreateTrackerViewController()
-        let navController = UINavigationController(rootViewController: secondVC)
-        navController.modalPresentationStyle = .automatic
-        self.present(navController, animated: true)
-    }
-    @objc func tapTrackRecord() {
-        guard let trackRecord else { return }
-        completedTrackers.append(trackRecord)
-    }
-    
-//MARK: Configure LifeCycle
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViews()
         setupConstraints()
         configureAppearance()
-
-        dymmy.isHidden = true
+        updatePlaceholderVisibility()
     }
-//MARK: Configure constrian
     
+    // MARK: - Setup
     private func setupViews() {
-        addTrack.translatesAutoresizingMaskIntoConstraints = false
-        dymmy.translatesAutoresizingMaskIntoConstraints = false
-        collectionView.translatesAutoresizingMaskIntoConstraints = false
-        nameFunction.translatesAutoresizingMaskIntoConstraints = false
-        datePicker.translatesAutoresizingMaskIntoConstraints = false
-        
-       
+        view.backgroundColor = .white
         view.addSubview(datePicker)
         view.addSubview(nameFunction)
-        view.addSubview(dymmy)
         view.addSubview(collectionView)
         view.addSubview(addTrack)
-    }
-    private func configureAppearance() {
-        addTrack.addTarget(self, action: #selector(tapAddTrack), for: .touchUpInside)
+        view.addSubview(dymmy)
         
-        collectionView.backgroundColor = .white // Фон коллекции
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+    }
+    
+    private func configureAppearance() {
+        collectionView.backgroundColor = .white
         collectionView.register(TrackerHeader.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: TrackerHeader.identifier)
         collectionView.register(TrackCell.self, forCellWithReuseIdentifier: TrackCell.identifier)
         collectionView.dataSource = self
         collectionView.delegate = self
         
-        // Настройка Layout (отступы)
         if let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
             layout.minimumLineSpacing = 16
             layout.sectionInset = .init(top: 20, left: 16, bottom: 20, right: 16)
-            // Размер ячейки (ширина экрана минус отступы, высота фиксированная)
             let width = (UIScreen.main.bounds.width - 32) / 2
             layout.itemSize = CGSize(width: width, height: 150)
         }
-        
-        
-        datePicker.datePickerMode = .date
-        datePicker.preferredDatePickerStyle = .compact
     }
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            addTrack.topAnchor.constraint(equalTo: view.topAnchor, constant: 45),
+            addTrack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 1),
             addTrack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 6),
             addTrack.heightAnchor.constraint(equalToConstant: 42),
             addTrack.widthAnchor.constraint(equalToConstant: 42),
             
-            datePicker.topAnchor.constraint(equalTo: view.topAnchor, constant: 49),
-            datePicker.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -16),
+            datePicker.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 5),
+            datePicker.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
-            nameFunction.topAnchor.constraint(equalTo: addTrack.bottomAnchor),
+            nameFunction.topAnchor.constraint(equalTo: addTrack.bottomAnchor, constant: 1),
             nameFunction.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             
-
-            collectionView.topAnchor.constraint(equalTo: nameFunction.topAnchor, constant: 45),
+            collectionView.topAnchor.constraint(equalTo: nameFunction.bottomAnchor, constant: 20),
             collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 15),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -45),
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
-            dymmy.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            dymmy.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            dymmy.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor),
+            dymmy.centerYAnchor.constraint(equalTo: collectionView.centerYAnchor),
             dymmy.heightAnchor.constraint(equalToConstant: 80),
             dymmy.widthAnchor.constraint(equalToConstant: 80)
         ])
     }
     
+    private func updatePlaceholderVisibility() {
+        let hasTrackers = categories.contains { !$0.arrayTracker.isEmpty }
+        dymmy.isHidden = hasTrackers
+        print("Placeholder hidden: \(dymmy.isHidden)")
+    }
+    
+    // MARK: - Actions
+    @objc func tapAddTrack() {
+        let createVC = CreateTrackerViewController()
+        
+        // Передаем замыкание, которое свяжет CreateTrackerVC и этот контроллер
+        createVC.onTrackerCreated = { [weak self] tracker, category in
+            // Вызываем метод делегата напрямую, так как мы являемся получателем
+            self?.didCreateHabit(tracker, category: category)
+        }
+        
+        let navController = UINavigationController(rootViewController: createVC)
+        navController.modalPresentationStyle = .automatic
+        self.present(navController, animated: true)
+    }
+    
+    // MARK: - NewHabitViewControllerDelegate Implementation
+    func didCreateHabit(_ habit: Tracker, category: String) {
+        // Ищем категорию
+        if let index = categories.firstIndex(where: { $0.nameTrackerCategory == category }) {
+            // Категория есть, добавляем трекер
+            var existingCategory = categories[index]
+            var newTrackers = existingCategory.arrayTracker
+            newTrackers.append(habit)
+            
+            // Обновляем категорию в массиве (struct - value type)
+            categories[index] = TrackerCategory(nameTrackerCategory: existingCategory.nameTrackerCategory, arrayTracker: newTrackers)
+        } else {
+            // Категории нет, создаем новую
+            let newCategory = TrackerCategory(nameTrackerCategory: category, arrayTracker: [habit])
+            categories.append(newCategory)
+        }
+        
+        // Обновляем таблицу
+        collectionView.reloadData()
+        updatePlaceholderVisibility()
+        print("Трекер '\(habit.name)' добавлен в категорию '\(category)'")
+    }
 }
-// MARK: - DataSource
+
+// MARK: - DataSource & DelegateFlowLayout (без изменений)
 extension TrackViewController: UICollectionViewDataSource {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return categories.count
+    }
+    
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return items.count
+        return categories[section].arrayTracker.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -141,22 +179,19 @@ extension TrackViewController: UICollectionViewDataSource {
             return UICollectionViewCell()
         }
         
-        let item = items[indexPath.row]
+        let tracker = categories[indexPath.section].arrayTracker[indexPath.row]
         
-        // Передаем данные в ячейку, включая выбранную дату
-        // item.2 - это строка "0 дней" из вашего массива, но лучше передавать Int
-        // Для примера передаем текущую дату datePicker
+        // Пример настройки ячейки
         cell.configure(
-            id: UUID().uuidString, // Здесь должен быть реальный ID трекера
-            jobsName: item.0,
-            daysCount: 0, // Начальное количество дней
-            isDone: false, // Начальное состояние
-            date: datePicker.date // Важный момент: передаем дату из пикера
+            id: tracker.id.uuidString,
+            jobsName: tracker.name,
+            daysCount: 0,
+            isDone: false,
+            date: datePicker.date
         )
         
         cell.onButtonTapped = {
-            print("Нажата кнопка в ячейке: \(item.0)")
-            // Здесь можно обновить массив completedTrackers
+            print("Нажата кнопка в ячейке: \(tracker.name)")
         }
         
         return cell
@@ -167,44 +202,30 @@ extension TrackViewController: UICollectionViewDataSource {
             guard let header = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: TrackerHeader.identifier, for: indexPath) as? TrackerHeader else {
                 return UICollectionReusableView()
             }
-            header.configure(title: "Домашний уют")
+            header.configure(title: categories[indexPath.section].nameTrackerCategory)
             return header
         }
         return UICollectionReusableView()
     }
 }
 
-// MARK: - DelegateFlowLayout
 extension TrackViewController: UICollectionViewDelegateFlowLayout {
-    // Размер Header
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
         return CGSize(width: collectionView.bounds.width, height: 50)
     }
     
-    // Размер Ячейки (расчет для 2 столбцов)
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        // Отступ между ячейками
         let spacing: CGFloat = 9
-        // Доступная ширина (ширина коллекции минус отступ)
         let availableWidth = collectionView.bounds.width - spacing
-        // Ширина одной ячейки
         let width = availableWidth / 2
-        
         return CGSize(width: width, height: 150)
     }
     
-    // Отступы секции
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
         return UIEdgeInsets(top: 10, left: 0, bottom: 16, right: 0)
     }
     
-    // Минимальный интервал между ячейками (по горизонтали)
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
         return 9
-    }
-    
-    // Минимальный интервал между строками (по вертикали)
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
-        return 16
     }
 }
