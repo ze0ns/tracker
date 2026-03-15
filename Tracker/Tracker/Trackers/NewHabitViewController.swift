@@ -182,14 +182,9 @@ final class NewHabitViewController: UIViewController {
                planTracker: "emoji"
            )
            
-           // 1. Уведомляем делегата (если он есть)
            delegate?.didCreateHabit(tracker, category: category)
-           
-           // 2. Вызываем замыкание (если оно есть)
            onTrackerCreated?(tracker, category)
-           
-           // 3. Закрываем экран
-           dismiss(animated: true)
+           presentingViewController?.dismiss(animated: true)
        }
     
     @objc private func textFieldDidChange() {
@@ -200,11 +195,6 @@ final class NewHabitViewController: UIViewController {
         view.endEditing(true)
     }
 
-    private func showtrackersScreen() {
-        let trackerVC = TrackViewController()
-        trackerVC.modalPresentationStyle = .fullScreen
-        present(trackerVC, animated: true)
-    }
     private func showCategoryScreen() {
         let categoryVC = CategoryViewController()
         categoryVC.delegate = self

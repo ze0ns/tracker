@@ -4,23 +4,17 @@
 
 import UIKit
 
-// Протокол для передачи данных назад (убедитесь, что он совпадает с тем, что в NewHabitViewController)
 protocol TrackViewControllerDelegate: AnyObject {
     func didTrackers(_ trackers: [Tracker])
 }
 
-// Добавляем соответствие протоколу NewHabitViewControllerDelegate
 class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     
     // MARK: - Public Properties
     var categories: [TrackerCategory] = []
     var completedTrackers: [TrackerRecord] = []
     
-    // Убираем это свойство, так как TrackViewController САМ является делегатом
-    // weak var delegate: NewHabitViewControllerDelegate?
-    
     // MARK: - UI Elements
-    // ... (код элементов без изменений) ...
     
     private lazy var addTrack: UIButton = {
         let addTrack = UIButton()
@@ -122,7 +116,6 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     private func updatePlaceholderVisibility() {
         let hasTrackers = categories.contains { !$0.arrayTracker.isEmpty }
         dymmy.isHidden = hasTrackers
-        print("Placeholder hidden: \(dymmy.isHidden)")
     }
     
     // MARK: - Actions
@@ -142,22 +135,20 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     
     // MARK: - NewHabitViewControllerDelegate Implementation
     func didCreateHabit(_ habit: Tracker, category: String) {
-        // Ищем категорию
+
         if let index = categories.firstIndex(where: { $0.nameTrackerCategory == category }) {
-            // Категория есть, добавляем трекер
-            var existingCategory = categories[index]
+  
+            let existingCategory = categories[index]
             var newTrackers = existingCategory.arrayTracker
             newTrackers.append(habit)
-            
-            // Обновляем категорию в массиве (struct - value type)
+      
             categories[index] = TrackerCategory(nameTrackerCategory: existingCategory.nameTrackerCategory, arrayTracker: newTrackers)
         } else {
-            // Категории нет, создаем новую
+  
             let newCategory = TrackerCategory(nameTrackerCategory: category, arrayTracker: [habit])
             categories.append(newCategory)
         }
-        
-        // Обновляем таблицу
+
         collectionView.reloadData()
         updatePlaceholderVisibility()
         print("Трекер '\(habit.name)' добавлен в категорию '\(category)'")
@@ -180,8 +171,7 @@ extension TrackViewController: UICollectionViewDataSource {
         }
         
         let tracker = categories[indexPath.section].arrayTracker[indexPath.row]
-        
-        // Пример настройки ячейки
+ 
         cell.configure(
             id: tracker.id.uuidString,
             jobsName: tracker.name,

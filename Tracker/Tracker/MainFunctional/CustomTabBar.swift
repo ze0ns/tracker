@@ -54,7 +54,7 @@ final class CustomTabBar: UIView {
     private func updateSelection() {
         for (index, button) in buttons.enumerated() {
             button.isSelected = (index == selectedIndex)
-            button.tintColor = index == selectedIndex ? .ypWhiteDay : .ypBlackDay
+            button.tintColor = index == selectedIndex ? .blue : .gray
         }
     }
     // MARK: - Public Methods , UI

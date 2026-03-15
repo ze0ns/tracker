@@ -55,7 +55,7 @@ final class MainTabBarController: UITabBarController {
                    let size = CGSize(width: 24, height: 24)
                    let renderer = UIGraphicsImageRenderer(size: size)
                    image = renderer.image { context in
-                       UIColor.gray.setFill()
+                       UIColor.blue.setFill()
                        context.fill(CGRect(origin: .zero, size: size))
                    }
                }
