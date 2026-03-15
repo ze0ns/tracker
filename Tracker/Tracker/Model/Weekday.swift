@@ -1,20 +1,13 @@
-//
-//  Weekday.swift
-//  Tracker
-//
-//  Created by Oschepkov Aleksandr on 09.03.2026.
-//
-
 import Foundation
 
 enum Weekday: Int, CaseIterable, Codable, Comparable {
-    case monday = 2
-    case tuesday = 3
-    case wednesday = 4
-    case thursday = 5
-    case friday = 6
-    case saturday = 7
-    case sunday = 1
+    case monday = 1
+    case tuesday = 2
+    case wednesday = 3
+    case thursday = 4
+    case friday = 5
+    case saturday = 6
+    case sunday = 7
     
     var fullName: String {
         switch self {

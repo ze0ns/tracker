@@ -15,11 +15,12 @@ final class IrregularHabitViewController: UIViewController {
     
     // MARK: - Delegate
     weak var delegate: IrregularHabitViewControllerDelegate?
-    
+    var onTrackerCreated: ((Tracker, String) -> Void)?
+
     // MARK: - Private Properties
     
-    private var selectedCategory: String?
-
+    private var selectedCategory: String = "Важное"
+    private var selectedSchedule: [Weekday] = []
     
     // MARK: - UI Elements
  
@@ -164,18 +165,20 @@ final class IrregularHabitViewController: UIViewController {
     }
     
     @objc private func createButtonTapped() {
-        guard let name = nameTextField.text,
-              let category = selectedCategory else { return }
+        guard let name = nameTextField.text else { return }
+        let category = selectedCategory
         
+        // Создаем трекер с правильным расписанием
         let tracker = Tracker(
             name: name,
             color: "white",
             emodji: "data",
-            planTracker: "emoji"
+            schedule: selectedSchedule
         )
         
         delegate?.didCreateHabit(tracker, category: category)
-        dismiss(animated: true)
+        onTrackerCreated?(tracker, category)
+        presentingViewController?.dismiss(animated: true)
     }
     
     @objc private func textFieldDidChange() {

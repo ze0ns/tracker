@@ -46,11 +46,34 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         let picker = UIDatePicker()
         picker.datePickerMode = .date
         picker.preferredDatePickerStyle = .compact
+        picker.locale = Locale(identifier: "ru_RU")
         picker.translatesAutoresizingMaskIntoConstraints = false
         return picker
     }()
     
     let collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
+    
+    // MARK: - Computed Properties
+    
+    private var visibleCategories: [TrackerCategory] {
+        let calendar = Calendar.current
+        let calendarWeekday = calendar.component(.weekday, from: datePicker.date)
+        let requiredWeekdayIndex = (calendarWeekday + 5) % 7 + 1
+        
+        guard let requiredDay = Weekday(rawValue: requiredWeekdayIndex) else {
+            return []
+        }
+        return categories.compactMap { category in
+            let filteredTrackers = category.arrayTracker.filter { tracker in
+                return tracker.schedule.contains(requiredDay)
+            }
+            if !filteredTrackers.isEmpty {
+                return TrackerCategory(nameTrackerCategory: category.nameTrackerCategory, arrayTracker: filteredTrackers)
+            } else {
+                return nil
+            }
+        }
+    }
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -74,6 +97,9 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     }
     
     private func configureAppearance() {
+
+        datePicker.addTarget(self, action: #selector(dateChanged), for: .valueChanged)
+        
         collectionView.backgroundColor = .white
         collectionView.register(TrackerHeader.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: TrackerHeader.identifier)
         collectionView.register(TrackCell.self, forCellWithReuseIdentifier: TrackCell.identifier)
@@ -114,17 +140,19 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     }
     
     private func updatePlaceholderVisibility() {
-        let hasTrackers = categories.contains { !$0.arrayTracker.isEmpty }
-        dymmy.isHidden = hasTrackers
+        dymmy.isHidden = !visibleCategories.isEmpty
     }
     
     // MARK: - Actions
+    @objc func dateChanged() {
+        collectionView.reloadData()
+        updatePlaceholderVisibility()
+    }
+    
     @objc func tapAddTrack() {
         let createVC = CreateTrackerViewController()
         
-        // Передаем замыкание, которое свяжет CreateTrackerVC и этот контроллер
         createVC.onTrackerCreated = { [weak self] tracker, category in
-            // Вызываем метод делегата напрямую, так как мы являемся получателем
             self?.didCreateHabit(tracker, category: category)
         }
         
@@ -135,34 +163,30 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     
     // MARK: - NewHabitViewControllerDelegate Implementation
     func didCreateHabit(_ habit: Tracker, category: String) {
-
         if let index = categories.firstIndex(where: { $0.nameTrackerCategory == category }) {
-  
-            let existingCategory = categories[index]
+            var existingCategory = categories[index]
             var newTrackers = existingCategory.arrayTracker
             newTrackers.append(habit)
-      
             categories[index] = TrackerCategory(nameTrackerCategory: existingCategory.nameTrackerCategory, arrayTracker: newTrackers)
         } else {
-  
             let newCategory = TrackerCategory(nameTrackerCategory: category, arrayTracker: [habit])
             categories.append(newCategory)
         }
-
+        
         collectionView.reloadData()
         updatePlaceholderVisibility()
         print("Трекер '\(habit.name)' добавлен в категорию '\(category)'")
     }
 }
 
-// MARK: - DataSource & DelegateFlowLayout (без изменений)
+// MARK: - DataSource
 extension TrackViewController: UICollectionViewDataSource {
     func numberOfSections(in collectionView: UICollectionView) -> Int {
-        return categories.count
+        return visibleCategories.count
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return categories[section].arrayTracker.count
+        return visibleCategories[section].arrayTracker.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -170,8 +194,8 @@ extension TrackViewController: UICollectionViewDataSource {
             return UICollectionViewCell()
         }
         
-        let tracker = categories[indexPath.section].arrayTracker[indexPath.row]
- 
+        let tracker = visibleCategories[indexPath.section].arrayTracker[indexPath.row]
+        
         cell.configure(
             id: tracker.id.uuidString,
             jobsName: tracker.name,
@@ -192,7 +216,7 @@ extension TrackViewController: UICollectionViewDataSource {
             guard let header = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: TrackerHeader.identifier, for: indexPath) as? TrackerHeader else {
                 return UICollectionReusableView()
             }
-            header.configure(title: categories[indexPath.section].nameTrackerCategory)
+            header.configure(title: visibleCategories[indexPath.section].nameTrackerCategory)
             return header
         }
         return UICollectionReusableView()

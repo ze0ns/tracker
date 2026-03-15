@@ -171,21 +171,21 @@ final class NewHabitViewController: UIViewController {
     }
     
     @objc private func createButtonTapped() {
-           guard let name = nameTextField.text else { return }
-           let category = selectedCategory
-           
-           // Создаем трекер
-           let tracker = Tracker(
-               name: name,
-               color: "white",
-               emodji: "data",
-               planTracker: "emoji"
-           )
-           
-           delegate?.didCreateHabit(tracker, category: category)
-           onTrackerCreated?(tracker, category)
-           presentingViewController?.dismiss(animated: true)
-       }
+        guard let name = nameTextField.text else { return }
+        let category = selectedCategory
+        
+        // Создаем трекер с правильным расписанием
+        let tracker = Tracker(
+            name: name,
+            color: "white",
+            emodji: "data",
+            schedule: selectedSchedule
+        )
+        
+        delegate?.didCreateHabit(tracker, category: category)
+        onTrackerCreated?(tracker, category)
+        presentingViewController?.dismiss(animated: true)
+    }
     
     @objc private func textFieldDidChange() {
         updateCreateButtonState()
