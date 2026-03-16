@@ -12,7 +12,13 @@ final class TrackCell: UICollectionViewCell {
         cardContainerView.translatesAutoresizingMaskIntoConstraints = false
         return cardContainerView
     }()
-
+    private let emojiContainer: UIView = {
+        let view = UIView()
+        view.backgroundColor = .ypWhiteOpt30
+        view.layer.cornerRadius = 12
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
     private let trackEmoji: UIImageView = {
         let trackEmoji = UIImageView()
         trackEmoji.image = UIImage(resource: .emoji)
@@ -23,7 +29,7 @@ final class TrackCell: UICollectionViewCell {
     private let trackJobs: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 12, weight: .medium)
-        label.textColor = .black
+        label.textColor = .ypWhiteDay
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -39,9 +45,9 @@ final class TrackCell: UICollectionViewCell {
 
     private lazy var actionButton: UIButton = {
         let actionButton = UIButton(type: .system)
-        actionButton.backgroundColor = .ypColorSelection5
-        actionButton.setImage(UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 10, weight: .bold)), for: .normal)
-        actionButton.tintColor = .white
+        actionButton.backgroundColor = .ypWhiteDay
+        actionButton.setImage(UIImage(named: "plus"), for: .normal)
+        actionButton.tintColor = .ypColorSelection5
         actionButton.layer.cornerRadius = 17
         actionButton.clipsToBounds = true
         actionButton.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
@@ -74,8 +80,8 @@ final class TrackCell: UICollectionViewCell {
     private func setupViews() {
         contentView.addSubview(cardContainerView)
         cardContainerView.addSubview(trackJobs)
-        cardContainerView.addSubview(trackEmoji)
-        
+        cardContainerView.addSubview(emojiContainer)
+        emojiContainer.addSubview(trackEmoji)
         contentView.addSubview(statusLabel)
         contentView.addSubview(actionButton)
     }
@@ -91,13 +97,18 @@ final class TrackCell: UICollectionViewCell {
             // Задание трекера
             trackJobs.trailingAnchor.constraint(equalTo: cardContainerView.trailingAnchor, constant: -12),
             trackJobs.bottomAnchor.constraint(equalTo: cardContainerView.bottomAnchor, constant: -12),
-            trackJobs.leadingAnchor.constraint(greaterThanOrEqualTo: trackEmoji.trailingAnchor, constant: 8),
+            trackJobs.leadingAnchor.constraint(equalTo: cardContainerView.leadingAnchor, constant: 12),
             
             // Картинка эмоджи
-            trackEmoji.topAnchor.constraint(equalTo: cardContainerView.topAnchor, constant: 12),
-            trackEmoji.leadingAnchor.constraint(equalTo: cardContainerView.leadingAnchor, constant: 12),
-            trackEmoji.widthAnchor.constraint(equalToConstant: 24),
-            trackEmoji.heightAnchor.constraint(equalToConstant: 24),
+            emojiContainer.topAnchor.constraint(equalTo: cardContainerView.topAnchor, constant: 12),
+            emojiContainer.leadingAnchor.constraint(equalTo: cardContainerView.leadingAnchor, constant: 12),
+            emojiContainer.widthAnchor.constraint(equalToConstant: 24),
+            emojiContainer.heightAnchor.constraint(equalToConstant: 24),
+            
+            trackEmoji.centerXAnchor.constraint(equalTo: emojiContainer.centerXAnchor),
+            trackEmoji.centerYAnchor.constraint(equalTo: emojiContainer.centerYAnchor),
+            trackEmoji.widthAnchor.constraint(equalToConstant: 16),
+            trackEmoji.heightAnchor.constraint(equalToConstant: 16),
             
             // Статус (счетчик дней)
             statusLabel.topAnchor.constraint(equalTo: cardContainerView.bottomAnchor, constant: 16),
@@ -135,8 +146,8 @@ final class TrackCell: UICollectionViewCell {
     }
     
     private func updateButtonAppearance() {
-        let imageName = isCompleted ?  "plus" : "checkmark"
-        actionButton.setImage(UIImage(systemName: imageName, withConfiguration: UIImage.SymbolConfiguration(pointSize: 10, weight: .bold)), for: .normal)
+        let imageName = isCompleted ?  "checkmark" : "plus"
+        actionButton.setImage(UIImage(named: imageName), for: .normal)
     }
     
     private func updateStatusLabel() {
