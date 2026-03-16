@@ -38,7 +38,7 @@ final class NewHabitViewController: UIViewController {
     private let nameTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "Введите название трекера"
-        textField.backgroundColor = .white
+        textField.backgroundColor = .ypBackgroundDay
         textField.layer.cornerRadius = 16
         textField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 0))
         textField.leftViewMode = .always
@@ -56,7 +56,6 @@ final class NewHabitViewController: UIViewController {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
-    
     
     private let cancelButton: UIButton = {
         let button = UIButton(type: .system)
@@ -104,12 +103,10 @@ final class NewHabitViewController: UIViewController {
         view.backgroundColor = .white
         
         view.addSubview(titleLabel)
-
-        
         view.addSubview(nameTextField)
         view.addSubview(tableView)
-        
         view.addSubview(buttonsStackView)
+        
         buttonsStackView.addArrangedSubview(cancelButton)
         buttonsStackView.addArrangedSubview(createButton)
     }
@@ -120,8 +117,7 @@ final class NewHabitViewController: UIViewController {
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
-       
-            nameTextField.topAnchor.constraint(equalTo: titleLabel.topAnchor, constant: 20),
+            nameTextField.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20),
             nameTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             nameTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             nameTextField.heightAnchor.constraint(equalToConstant: 75),
@@ -130,7 +126,6 @@ final class NewHabitViewController: UIViewController {
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             tableView.heightAnchor.constraint(equalToConstant: 150),
-            
             
             buttonsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             buttonsStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
@@ -145,21 +140,22 @@ final class NewHabitViewController: UIViewController {
         tableView.delegate = self
     }
     
-
-    
     private func setupActions() {
         cancelButton.addTarget(self, action: #selector(cancelButtonTapped), for: .touchUpInside)
         createButton.addTarget(self, action: #selector(createButtonTapped), for: .touchUpInside)
         nameTextField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
+        
+        // Добавляем жест для скрытия клавиатуры по тапу
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(hideKeyboard))
+        tapGesture.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapGesture)
     }
     
- 
     private func updateCreateButtonState() {
         let isNameFilled = nameTextField.text?.isEmpty == false
         let isScheduleSelected = !selectedSchedule.isEmpty
-
         
-        let isFormValid = isNameFilled  && isScheduleSelected
+        let isFormValid = isNameFilled && isScheduleSelected
         
         createButton.isEnabled = isFormValid
         createButton.backgroundColor = isFormValid ? .black : .ypGray
@@ -230,6 +226,10 @@ extension NewHabitViewController: UITableViewDataSource {
             let scheduleText = selectedSchedule.map { $0.fullName }.joined(separator: ", ")
             cell.configure(title: "Расписание", value: scheduleText)
         }
+        
+       
+        cell.backgroundColor = .ypBackgroundDay
+        
         return cell
     }
 }
@@ -250,8 +250,6 @@ extension NewHabitViewController: UITableViewDelegate {
         return 75
     }
 }
-
-
 
 // MARK: - CategoryViewControllerDelegate
 extension NewHabitViewController: CategoryViewControllerDelegate {
@@ -279,8 +277,7 @@ extension NewHabitViewController: UITextFieldDelegate {
     }
 }
 
-
-//MARK: SwiftUI - for working canvas
+// MARK: - SwiftUI for working canvas
 import SwiftUI
 struct CreateHabitPreview: PreviewProvider {
     static var previews: some View {

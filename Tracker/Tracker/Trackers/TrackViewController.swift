@@ -41,6 +41,13 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         dymmy.translatesAutoresizingMaskIntoConstraints = false
         return dymmy
     }()
+    private lazy var dymmyLabel: UILabel = {
+        let dymmyLabel = UILabel()
+        dymmyLabel.text = "Что будем отслеживать?"
+        dymmyLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        dymmyLabel.translatesAutoresizingMaskIntoConstraints = false
+        return dymmyLabel
+    }()
     
     let datePicker: UIDatePicker = {
         let picker = UIDatePicker()
@@ -92,6 +99,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         view.addSubview(collectionView)
         view.addSubview(addTrack)
         view.addSubview(dymmy)
+        view.addSubview(dymmyLabel)
         
         collectionView.translatesAutoresizingMaskIntoConstraints = false
     }
@@ -135,12 +143,17 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
             dymmy.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor),
             dymmy.centerYAnchor.constraint(equalTo: collectionView.centerYAnchor),
             dymmy.heightAnchor.constraint(equalToConstant: 80),
-            dymmy.widthAnchor.constraint(equalToConstant: 80)
+            dymmy.widthAnchor.constraint(equalToConstant: 80),
+            
+            dymmyLabel.topAnchor.constraint(equalTo: dymmy.bottomAnchor, constant: 8),
+            dymmyLabel.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor),
+ 
         ])
     }
     
     private func updatePlaceholderVisibility() {
         dymmy.isHidden = !visibleCategories.isEmpty
+        dymmyLabel.isHidden = !visibleCategories.isEmpty
     }
     
     // MARK: - Actions
@@ -195,17 +208,48 @@ extension TrackViewController: UICollectionViewDataSource {
         }
         
         let tracker = visibleCategories[indexPath.section].arrayTracker[indexPath.row]
+        let currentDate = datePicker.date
         
+        // 1. Форматируем дату для сравнения и сохранения
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd.MM.yyyy"
+        let dateString = dateFormatter.string(from: currentDate)
+        
+        // 2. Проверяем, есть ли уже запись для этого трекера в эту дату
+        let isDone = completedTrackers.contains { record in
+            record.trackID == tracker.id.uuidString && record.trackDate == dateString
+        }
+        
+        // 3. Считаем общее количество выполнений этого трекера за все время
+        let daysCount = completedTrackers.filter { $0.trackID == tracker.id.uuidString }.count
+        
+        // 4. Настраиваем ячейку
         cell.configure(
             id: tracker.id.uuidString,
             jobsName: tracker.name,
-            daysCount: 0,
-            isDone: false,
-            date: datePicker.date
+            daysCount: daysCount,
+            isDone: isDone,
+            date: currentDate
         )
         
-        cell.onButtonTapped = {
-            print("Нажата кнопка в ячейке: \(tracker.name)")
+        // 5. Обрабатываем нажатие кнопки
+        cell.onButtonTapped = { [weak self] in
+            guard let self = self else { return }
+            
+            // Создаем модель записи
+            let record = TrackerRecord(trackID: tracker.id.uuidString, trackDate: dateString)
+            
+            // Если запись уже есть -> удаляем (отмена выполнения)
+            // Если записи нет -> добавляем (выполнено)
+            if let index = self.completedTrackers.firstIndex(of: record) {
+                self.completedTrackers.remove(at: index)
+            } else {
+                self.completedTrackers.append(record)
+            }
+            
+            // Перезагружаем ячейку, чтобы обновить счетчик дней и состояние кнопки
+            // Используем performBatchUpdates для плавности, либо просто reloadItems
+            self.collectionView.reloadItems(at: [indexPath])
         }
         
         return cell

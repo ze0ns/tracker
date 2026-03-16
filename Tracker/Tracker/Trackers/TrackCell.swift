@@ -7,7 +7,7 @@ final class TrackCell: UICollectionViewCell {
     // MARK: - UI Elements
     private let cardContainerView: UIView = {
         let cardContainerView = UIView()
-        cardContainerView.backgroundColor = .ypColorSelection5 // Убедитесь, что этот цвет определен в вашем проекте
+        cardContainerView.backgroundColor = .ypColorSelection5
         cardContainerView.layer.cornerRadius = 16
         cardContainerView.translatesAutoresizingMaskIntoConstraints = false
         return cardContainerView
@@ -15,7 +15,7 @@ final class TrackCell: UICollectionViewCell {
 
     private let trackEmoji: UIImageView = {
         let trackEmoji = UIImageView()
-        trackEmoji.image = UIImage(resource: .emoji) // Убедитесь, что ресурс есть в Assets
+        trackEmoji.image = UIImage(resource: .emoji)
         trackEmoji.translatesAutoresizingMaskIntoConstraints = false
         return trackEmoji
     }()
@@ -40,8 +40,7 @@ final class TrackCell: UICollectionViewCell {
     private lazy var actionButton: UIButton = {
         let actionButton = UIButton(type: .system)
         actionButton.backgroundColor = .ypColorSelection5
-        // Начальное изображение - плюс
-        actionButton.setImage(UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .bold)), for: .normal)
+        actionButton.setImage(UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 10, weight: .bold)), for: .normal)
         actionButton.tintColor = .white
         actionButton.layer.cornerRadius = 17
         actionButton.clipsToBounds = true
@@ -54,11 +53,8 @@ final class TrackCell: UICollectionViewCell {
     private var isCompleted: Bool = false
     private var completedDaysCount: Int = 0
     private var trackerID: String?
-    
-    // Это свойство нужно заполнить в ViewController (передать datePicker.date)
     var selectedDate: Date?
 
-    // Замыкание для обработки нажатия (вместо делегата)
     var onButtonTapped: (() -> Void)?
     
     // MARK: - Init
@@ -119,41 +115,31 @@ final class TrackCell: UICollectionViewCell {
     // MARK: - Actions
     
     @objc private func buttonTapped() {
-        // Переключаем состояние
         isCompleted.toggle()
-        
-        // Обновляем UI кнопки
         updateButtonAppearance()
         
-        // Логика счета и записи
         if isCompleted {
-            // Увеличиваем счетчик
             completedDaysCount += 1
             updateStatusLabel()
-            
-            // Записываем дату (пример логики)
             if let date = selectedDate {
                 saveRecord(date: date)
             }
         } else {
-            // Если отменили выполнение, уменьшаем счетчик
             if completedDaysCount > 0 {
                 completedDaysCount -= 1
                 updateStatusLabel()
             }
         }
         
-        // Вызываем замыкание
         onButtonTapped?()
     }
     
     private func updateButtonAppearance() {
-        let imageName = isCompleted ? "checkmark" : "plus"
-        actionButton.setImage(UIImage(systemName: imageName, withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .bold)), for: .normal)
+        let imageName = isCompleted ?  "plus" : "checkmark"
+        actionButton.setImage(UIImage(systemName: imageName, withConfiguration: UIImage.SymbolConfiguration(pointSize: 10, weight: .bold)), for: .normal)
     }
     
     private func updateStatusLabel() {
-        // Простая логика склонения (можно улучшить)
         let suffix: String
         let lastDigit = completedDaysCount % 10
         let lastTwoDigits = completedDaysCount % 100
@@ -178,20 +164,41 @@ final class TrackCell: UICollectionViewCell {
         formatter.dateFormat = "dd.MM.yyyy"
         let dateString = formatter.string(from: date)
         
-        // Создаем запись (в реальном приложении ее нужно сохранить в массив в ViewController)
         let record = TrackerRecord(trackID: id, trackDate: dateString)
         print("Запись сохранена: \(record)")
     }
     
     // MARK: - Configuration
     
-    // Обновил метод конфигурации, чтобы принимать данные для логики
     func configure(id: String, jobsName: String, daysCount: Int, isDone: Bool, date: Date?) {
         self.trackerID = id
         self.trackJobs.text = jobsName
         self.completedDaysCount = daysCount
         self.isCompleted = isDone
         self.selectedDate = date
+        
+        // --- ЛОГИКА ПРОВЕРКИ ДАТЫ ---
+        if let selectedDate = selectedDate {
+            let calendar = Calendar.current
+            
+            // Сравниваем только год, месяц и день
+            let comparison = calendar.compare(selectedDate, to: Date(), toGranularity: .day)
+            
+            // .orderedDescending означает, что выбранная дата позже текущей (будущее)
+            if comparison == .orderedDescending {
+                actionButton.isUserInteractionEnabled = false
+                actionButton.alpha = 0.5 // Визуально делаем кнопку неактивной (полупрозрачной)
+            } else {
+                // Дата сегодня или в прошлом - кнопка активна
+                actionButton.isUserInteractionEnabled = true
+                actionButton.alpha = 1.0
+            }
+        } else {
+            // Если дата не передана, по умолчанию активна
+            actionButton.isUserInteractionEnabled = true
+            actionButton.alpha = 1.0
+        }
+        // -----------------------------
         
         updateStatusLabel()
         updateButtonAppearance()
