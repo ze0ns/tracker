@@ -237,3 +237,11 @@ class SwitchCell: UITableViewCell {
         switchControl.tag = tag
     }
 }
+
+//MARK: SwiftUI - for working canvas
+import SwiftUI
+struct SchedulePreview: PreviewProvider {
+    static var previews: some View {
+        VCProvider<ScheduleViewController>.previews
+    }
+}

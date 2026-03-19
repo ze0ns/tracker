@@ -7,15 +7,21 @@ final class TrackCell: UICollectionViewCell {
     // MARK: - UI Elements
     private let cardContainerView: UIView = {
         let cardContainerView = UIView()
-        cardContainerView.backgroundColor = .ypColorSelection5 // Убедитесь, что этот цвет определен в вашем проекте
+        cardContainerView.backgroundColor = .ypColorSelection5
         cardContainerView.layer.cornerRadius = 16
         cardContainerView.translatesAutoresizingMaskIntoConstraints = false
         return cardContainerView
     }()
-
+    private let emojiContainer: UIView = {
+        let view = UIView()
+        view.backgroundColor = .ypWhiteOpt30
+        view.layer.cornerRadius = 12
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
     private let trackEmoji: UIImageView = {
         let trackEmoji = UIImageView()
-        trackEmoji.image = UIImage(resource: .emoji) // Убедитесь, что ресурс есть в Assets
+        trackEmoji.image = UIImage(resource: .emoji)
         trackEmoji.translatesAutoresizingMaskIntoConstraints = false
         return trackEmoji
     }()
@@ -23,7 +29,7 @@ final class TrackCell: UICollectionViewCell {
     private let trackJobs: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 12, weight: .medium)
-        label.textColor = .black
+        label.textColor = .ypWhiteDay
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -39,10 +45,9 @@ final class TrackCell: UICollectionViewCell {
 
     private lazy var actionButton: UIButton = {
         let actionButton = UIButton(type: .system)
-        actionButton.backgroundColor = .ypColorSelection5
-        // Начальное изображение - плюс
-        actionButton.setImage(UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .bold)), for: .normal)
-        actionButton.tintColor = .white
+        actionButton.backgroundColor = .ypWhiteDay
+        actionButton.setImage(UIImage(named: "plus"), for: .normal)
+        actionButton.tintColor = .ypColorSelection5
         actionButton.layer.cornerRadius = 17
         actionButton.clipsToBounds = true
         actionButton.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
@@ -54,11 +59,8 @@ final class TrackCell: UICollectionViewCell {
     private var isCompleted: Bool = false
     private var completedDaysCount: Int = 0
     private var trackerID: String?
-    
-    // Это свойство нужно заполнить в ViewController (передать datePicker.date)
     var selectedDate: Date?
 
-    // Замыкание для обработки нажатия (вместо делегата)
     var onButtonTapped: (() -> Void)?
     
     // MARK: - Init
@@ -78,8 +80,8 @@ final class TrackCell: UICollectionViewCell {
     private func setupViews() {
         contentView.addSubview(cardContainerView)
         cardContainerView.addSubview(trackJobs)
-        cardContainerView.addSubview(trackEmoji)
-        
+        cardContainerView.addSubview(emojiContainer)
+        emojiContainer.addSubview(trackEmoji)
         contentView.addSubview(statusLabel)
         contentView.addSubview(actionButton)
     }
@@ -95,13 +97,18 @@ final class TrackCell: UICollectionViewCell {
             // Задание трекера
             trackJobs.trailingAnchor.constraint(equalTo: cardContainerView.trailingAnchor, constant: -12),
             trackJobs.bottomAnchor.constraint(equalTo: cardContainerView.bottomAnchor, constant: -12),
-            trackJobs.leadingAnchor.constraint(greaterThanOrEqualTo: trackEmoji.trailingAnchor, constant: 8),
+            trackJobs.leadingAnchor.constraint(equalTo: cardContainerView.leadingAnchor, constant: 12),
             
             // Картинка эмоджи
-            trackEmoji.topAnchor.constraint(equalTo: cardContainerView.topAnchor, constant: 12),
-            trackEmoji.leadingAnchor.constraint(equalTo: cardContainerView.leadingAnchor, constant: 12),
-            trackEmoji.widthAnchor.constraint(equalToConstant: 24),
-            trackEmoji.heightAnchor.constraint(equalToConstant: 24),
+            emojiContainer.topAnchor.constraint(equalTo: cardContainerView.topAnchor, constant: 12),
+            emojiContainer.leadingAnchor.constraint(equalTo: cardContainerView.leadingAnchor, constant: 12),
+            emojiContainer.widthAnchor.constraint(equalToConstant: 24),
+            emojiContainer.heightAnchor.constraint(equalToConstant: 24),
+            
+            trackEmoji.centerXAnchor.constraint(equalTo: emojiContainer.centerXAnchor),
+            trackEmoji.centerYAnchor.constraint(equalTo: emojiContainer.centerYAnchor),
+            trackEmoji.widthAnchor.constraint(equalToConstant: 16),
+            trackEmoji.heightAnchor.constraint(equalToConstant: 16),
             
             // Статус (счетчик дней)
             statusLabel.topAnchor.constraint(equalTo: cardContainerView.bottomAnchor, constant: 16),
@@ -119,41 +126,31 @@ final class TrackCell: UICollectionViewCell {
     // MARK: - Actions
     
     @objc private func buttonTapped() {
-        // Переключаем состояние
         isCompleted.toggle()
-        
-        // Обновляем UI кнопки
         updateButtonAppearance()
         
-        // Логика счета и записи
         if isCompleted {
-            // Увеличиваем счетчик
             completedDaysCount += 1
             updateStatusLabel()
-            
-            // Записываем дату (пример логики)
             if let date = selectedDate {
                 saveRecord(date: date)
             }
         } else {
-            // Если отменили выполнение, уменьшаем счетчик
             if completedDaysCount > 0 {
                 completedDaysCount -= 1
                 updateStatusLabel()
             }
         }
         
-        // Вызываем замыкание
         onButtonTapped?()
     }
     
     private func updateButtonAppearance() {
-        let imageName = isCompleted ? "checkmark" : "plus"
-        actionButton.setImage(UIImage(systemName: imageName, withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .bold)), for: .normal)
+        let imageName = isCompleted ?  "checkmark" : "plus"
+        actionButton.setImage(UIImage(named: imageName), for: .normal)
     }
     
     private func updateStatusLabel() {
-        // Простая логика склонения (можно улучшить)
         let suffix: String
         let lastDigit = completedDaysCount % 10
         let lastTwoDigits = completedDaysCount % 100
@@ -178,20 +175,41 @@ final class TrackCell: UICollectionViewCell {
         formatter.dateFormat = "dd.MM.yyyy"
         let dateString = formatter.string(from: date)
         
-        // Создаем запись (в реальном приложении ее нужно сохранить в массив в ViewController)
         let record = TrackerRecord(trackID: id, trackDate: dateString)
         print("Запись сохранена: \(record)")
     }
     
     // MARK: - Configuration
     
-    // Обновил метод конфигурации, чтобы принимать данные для логики
     func configure(id: String, jobsName: String, daysCount: Int, isDone: Bool, date: Date?) {
         self.trackerID = id
         self.trackJobs.text = jobsName
         self.completedDaysCount = daysCount
         self.isCompleted = isDone
         self.selectedDate = date
+        
+        // --- ЛОГИКА ПРОВЕРКИ ДАТЫ ---
+        if let selectedDate = selectedDate {
+            let calendar = Calendar.current
+            
+            // Сравниваем только год, месяц и день
+            let comparison = calendar.compare(selectedDate, to: Date(), toGranularity: .day)
+            
+            // .orderedDescending означает, что выбранная дата позже текущей (будущее)
+            if comparison == .orderedDescending {
+                actionButton.isUserInteractionEnabled = false
+                actionButton.alpha = 0.5 // Визуально делаем кнопку неактивной (полупрозрачной)
+            } else {
+                // Дата сегодня или в прошлом - кнопка активна
+                actionButton.isUserInteractionEnabled = true
+                actionButton.alpha = 1.0
+            }
+        } else {
+            // Если дата не передана, по умолчанию активна
+            actionButton.isUserInteractionEnabled = true
+            actionButton.alpha = 1.0
+        }
+        // -----------------------------
         
         updateStatusLabel()
         updateButtonAppearance()

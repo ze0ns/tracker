@@ -17,8 +17,11 @@ final class CreateTrackerViewController: UIViewController {
     // MARK: - Delegate
     weak var delegate: CreateTrackerViewControllerDelegate?
     
+    // Замыкание для передачи данных
+    var onTrackerCreated: ((Tracker, String) -> Void)?
+    
     // MARK: - UI Elements
-
+    
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.text = "Создание трекера"
@@ -92,19 +95,27 @@ final class CreateTrackerViewController: UIViewController {
         irregularEventButton.addTarget(self, action: #selector(irregularEventButtonTapped), for: .touchUpInside)
     }
     
-
+    
     
     // MARK: - Actions
     @objc private func habitButtonTapped() {
-        let secondVC = NewHabitViewController()
-        let navController = UINavigationController(rootViewController: secondVC)
+        let newHabitVC = NewHabitViewController()
+        
+        // ПЕРЕДАЕМ ЗАМЫКАНИЕ ДАЛЬШЕ
+        newHabitVC.onTrackerCreated = { [weak self] tracker, category in
+            self?.onTrackerCreated?(tracker, category)
+            self?.dismiss(animated: true) // Закрываем всю цепочку модальных окон
+        }
+        let navController = UINavigationController(rootViewController: newHabitVC)
         navController.modalPresentationStyle = .automatic
         self.present(navController, animated: true)
     }
     
     @objc private func irregularEventButtonTapped() {
-        // Создание нерегулярного события
-        print("Выбрано нерегулярное событие")
+        let secondVC = IrregularHabitViewController()
+        let navController = UINavigationController(rootViewController: secondVC)
+        navController.modalPresentationStyle = .automatic
+        self.present(navController, animated: true)
     }
 }
 
