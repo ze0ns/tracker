@@ -7,9 +7,18 @@
 
 import UIKit
 struct Tracker {
-    let id = UUID()
+    let id: UUID
     let name: String
     let color: String
     let emodji: String
-    let schedule: [Weekday] 
+    let schedule: [Weekday]
+    
+    // Добавляем явный инициализатор со значением по умолчанию для id
+    init(id: UUID = UUID(), name: String, color: String, emodji: String, schedule: [Weekday]) {
+        self.id = id
+        self.name = name
+        self.color = color
+        self.emodji = emodji
+        self.schedule = schedule
+    }
 }

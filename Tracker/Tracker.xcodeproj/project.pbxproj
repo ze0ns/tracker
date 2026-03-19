@@ -6,8 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		06D707B02F6922F700279924 /* TrackersCoreData.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 06D707AE2F6922F700279924 /* TrackersCoreData.xcdatamodeld */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		069AB81B2F5BC96A003EB942 /* Tracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		06D707AF2F6922F700279924 /* TrackersCoreData.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = TrackersCoreData.xcdatamodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -45,6 +50,7 @@
 		069AB8122F5BC96A003EB942 = {
 			isa = PBXGroup;
 			children = (
+				06D707AE2F6922F700279924 /* TrackersCoreData.xcdatamodeld */,
 				069AB81D2F5BC96A003EB942 /* Tracker */,
 				069AB81C2F5BC96A003EB942 /* Products */,
 			);
@@ -132,6 +138,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				06D707B02F6922F700279924 /* TrackersCoreData.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -347,6 +354,19 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		06D707AE2F6922F700279924 /* TrackersCoreData.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				06D707AF2F6922F700279924 /* TrackersCoreData.xcdatamodel */,
+			);
+			currentVersion = 06D707AF2F6922F700279924 /* TrackersCoreData.xcdatamodel */;
+			path = TrackersCoreData.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
 	};
 	rootObject = 069AB8132F5BC96A003EB942 /* Project object */;
 }

@@ -10,9 +10,9 @@ protocol TrackViewControllerDelegate: AnyObject {
 
 class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     
-    // MARK: - Public Properties
-    var categories: [TrackerCategory] = []
-    var completedTrackers: [TrackerRecord] = []
+    // MARK: - Properties
+    // Хранилище теперь управляет данными
+    private let trackerStore = TrackerStore()
     
     // MARK: - UI Elements
     
@@ -41,6 +41,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         dymmy.translatesAutoresizingMaskIntoConstraints = false
         return dymmy
     }()
+    
     private lazy var dymmyLabel: UILabel = {
         let dymmyLabel = UILabel()
         dymmyLabel.text = "Что будем отслеживать?"
@@ -70,7 +71,9 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         guard let requiredDay = Weekday(rawValue: requiredWeekdayIndex) else {
             return []
         }
-        return categories.compactMap { category in
+        
+        // Используем данные из Store
+        return trackerStore.categories.compactMap { category in
             let filteredTrackers = category.arrayTracker.filter { tracker in
                 return tracker.schedule.contains(requiredDay)
             }
@@ -105,7 +108,6 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     }
     
     private func configureAppearance() {
-
         datePicker.addTarget(self, action: #selector(dateChanged), for: .valueChanged)
         
         collectionView.backgroundColor = .white
@@ -147,7 +149,6 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
             
             dymmyLabel.topAnchor.constraint(equalTo: dymmy.bottomAnchor, constant: 8),
             dymmyLabel.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor),
- 
         ])
     }
     
@@ -176,19 +177,12 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     
     // MARK: - NewHabitViewControllerDelegate Implementation
     func didCreateHabit(_ habit: Tracker, category: String) {
-        if let index = categories.firstIndex(where: { $0.nameTrackerCategory == category }) {
-            var existingCategory = categories[index]
-            var newTrackers = existingCategory.arrayTracker
-            newTrackers.append(habit)
-            categories[index] = TrackerCategory(nameTrackerCategory: existingCategory.nameTrackerCategory, arrayTracker: newTrackers)
-        } else {
-            let newCategory = TrackerCategory(nameTrackerCategory: category, arrayTracker: [habit])
-            categories.append(newCategory)
-        }
+        // Сохраняем через Store
+        trackerStore.addTracker(habit, toCategory: category)
         
         collectionView.reloadData()
         updatePlaceholderVisibility()
-        print("Трекер '\(habit.name)' добавлен в категорию '\(category)'")
+        print("Трекер '\(habit.name)' добавлен в категорию '\(category)' и сохранен в CoreData")
     }
 }
 
@@ -210,20 +204,19 @@ extension TrackViewController: UICollectionViewDataSource {
         let tracker = visibleCategories[indexPath.section].arrayTracker[indexPath.row]
         let currentDate = datePicker.date
         
-        // 1. Форматируем дату для сравнения и сохранения
+        // Форматируем дату для сравнения
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "dd.MM.yyyy"
         let dateString = dateFormatter.string(from: currentDate)
         
-        // 2. Проверяем, есть ли уже запись для этого трекера в эту дату
-        let isDone = completedTrackers.contains { record in
+        // Проверяем выполнение через Store
+        let isDone = trackerStore.completedTrackers.contains { record in
             record.trackID == tracker.id.uuidString && record.trackDate == dateString
         }
         
-        // 3. Считаем общее количество выполнений этого трекера за все время
-        let daysCount = completedTrackers.filter { $0.trackID == tracker.id.uuidString }.count
+        // Считаем дни
+        let daysCount = trackerStore.completedTrackers.filter { $0.trackID == tracker.id.uuidString }.count
         
-        // 4. Настраиваем ячейку
         cell.configure(
             id: tracker.id.uuidString,
             jobsName: tracker.name,
@@ -232,23 +225,13 @@ extension TrackViewController: UICollectionViewDataSource {
             date: currentDate
         )
         
-        // 5. Обрабатываем нажатие кнопки
         cell.onButtonTapped = { [weak self] in
             guard let self = self else { return }
             
-            // Создаем модель записи
-            let record = TrackerRecord(trackID: tracker.id.uuidString, trackDate: dateString)
+            // Переключаем запись в CoreData
+            self.trackerStore.toggleTrackerRecord(trackerId: tracker.id.uuidString, date: currentDate)
             
-            // Если запись уже есть -> удаляем (отмена выполнения)
-            // Если записи нет -> добавляем (выполнено)
-            if let index = self.completedTrackers.firstIndex(of: record) {
-                self.completedTrackers.remove(at: index)
-            } else {
-                self.completedTrackers.append(record)
-            }
-            
-            // Перезагружаем ячейку, чтобы обновить счетчик дней и состояние кнопки
-            // Используем performBatchUpdates для плавности, либо просто reloadItems
+            // Обновляем ячейку
             self.collectionView.reloadItems(at: [indexPath])
         }
         

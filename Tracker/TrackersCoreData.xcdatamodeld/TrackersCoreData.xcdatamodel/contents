@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24512" systemVersion="25D2128" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+    <entity name="TrackerCategoryCD" representedClassName="TrackerCategoryCD" syncable="YES" codeGenerationType="class">
+        <attribute name="title" attributeType="String"/>
+        <relationship name="trackers" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="TrackerCD" inverseName="trackercategory" inverseEntity="TrackerCD"/>
+    </entity>
+    <entity name="TrackerCD" representedClassName="TrackerCD" syncable="YES" codeGenerationType="class">
+        <attribute name="color" optional="YES" attributeType="String"/>
+        <attribute name="emodji" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="String"/>
+        <attribute name="name" attributeType="String"/>
+        <attribute name="schedule" attributeType="Binary" allowsExternalBinaryDataStorage="YES" customClassName="[Weekday]"/>
+        <relationship name="trackercategory" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="TrackerCategoryCD" inverseName="trackers" inverseEntity="TrackerCategoryCD"/>
+    </entity>
+    <entity name="TrackerRecordCD" representedClassName="TrackerRecordCD" syncable="YES" codeGenerationType="class">
+        <attribute name="trackDate" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="trackID" attributeType="String"/>
+    </entity>
+</model>
