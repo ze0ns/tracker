@@ -69,31 +69,33 @@ class TrackerStore {
     }
     
     // MARK: - Public Methods
-    
-    /// Загружает категории и записи из базы в память
     func loadData() {
         do {
             try categoriesFetcher.performFetch()
             try recordsFetcher.performFetch()
             
-            // Маппинг категорий
             if let categoryObjects = categoriesFetcher.fetchedObjects {
+                // Диагностика: сколько категорий загружено из БД?
+                print("📂 Загружено категорий из Core Data: \(categoryObjects.count)")
+                
                 self.categories = categoryObjects.compactMap { mapCategory($0) }
+                
+                // Диагностика: сколько трекеров в памяти после маппинга?
+                let totalTrackers = self.categories.reduce(0) { $0 + $1.arrayTracker.count }
+                print("   -> Всего трекеров в памяти: \(totalTrackers)")
             }
             
-            // Маппинг записей
             if let recordObjects = recordsFetcher.fetchedObjects {
                 self.completedTrackers = recordObjects.compactMap { mapRecord($0) }
+                print("📝 Загружено записей о выполнении: \(completedTrackers.count)")
             }
             
         } catch {
-            print("Ошибка загрузки данных: \(error)")
+            print("❌ Ошибка загрузки данных: \(error)")
         }
     }
-    
-    /// Добавляет новый трекер в категорию
+
     func addTracker(_ tracker: Tracker, toCategory categoryTitle: String) {
-        // Ищем категорию в контексте
         let fetchRequest: NSFetchRequest<TrackerCategoryCD> = TrackerCategoryCD.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "title == %@", categoryTitle)
         
@@ -103,30 +105,39 @@ class TrackerStore {
             let results = try context.fetch(fetchRequest)
             categoryObject = results.first
         } catch {
-            print("Ошибка поиска категории: \(error)")
+            print("❌ Ошибка поиска категории: \(error)")
             return
         }
         
-        // Если категории нет, создаем новую
         if categoryObject == nil {
             categoryObject = TrackerCategoryCD(context: context)
             categoryObject?.title = categoryTitle
+            print("🆕 Создана новая категория: \(categoryTitle)")
+        } else {
+            print("☑️ Найдена существующая категория: \(categoryTitle)")
         }
         
-        // Создаем объект трекера
         let trackerObject = TrackerCD(context: context)
         trackerObject.id = tracker.id.uuidString
         trackerObject.name = tracker.name
         trackerObject.color = tracker.color
         trackerObject.emodji = tracker.emodji
+        
+        // Сохраняем расписание
         let scheduleInts = tracker.schedule.map { $0.rawValue }
         trackerObject.schedule = try? JSONEncoder().encode(scheduleInts)
         
-        saveContext()
+        // ВАЖНО: Привязываем трекер к категории
+        trackerObject.trackercategory = categoryObject
         
-        // Обновляем локальный кэш
+        // Диагностика перед сохранением
+        print("💾 Сохраняем трекер '\(tracker.name)' с расписанием: \(tracker.schedule.map { $0.shortName })")
+        
+        saveContext()
         loadData()
     }
+
+ 
     
     /// Переключает статус выполнения трекера
     func toggleTrackerRecord(trackerId: String, date: Date) {
@@ -172,14 +183,21 @@ class TrackerStore {
     // MARK: - Mapping Helpers
     
     private func mapCategory(_ object: TrackerCategoryCD) -> TrackerCategory? {
-        guard let title = object.title,
-              let trackerSet = object.trackers as? Set<TrackerCD> else { return nil }
+        guard let title = object.title else { return nil }
+        
+        // ВАЖНО: Проверяем, есть ли связь trackers
+        guard let trackerSet = object.trackers as? Set<TrackerCD> else {
+            print("⚠️ Категория '\(title)' не имеет связи с трекерами (trackers is nil or wrong type)")
+            return nil
+        }
+        
+        // Диагностика: сколько трекеров в этой категории в БД?
+        print("   -> Категория '\(title)' содержит \(trackerSet.count) трекеров в БД")
         
         let trackers = trackerSet.compactMap { mapTracker($0) }
         
         return TrackerCategory(nameTrackerCategory: title, arrayTracker: trackers)
     }
-    
     private func mapTracker(_ object: TrackerCD) -> Tracker? {
         guard let name = object.name,
               let idString = object.id,
