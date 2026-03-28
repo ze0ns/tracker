@@ -16,6 +16,19 @@ final class NewHabitViewController: UIViewController {
     // MARK: - Delegate
     weak var delegate: NewHabitViewControllerDelegate?
     var onTrackerCreated: ((Tracker, String) -> Void)?
+    weak var trackerStore: TrackerStore?
+    
+    // 2. Создаем кастомный инициализатор
+    init(trackerStore: TrackerStore) {
+        self.trackerStore = trackerStore
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    // Обязательный инициализатор для storyboard/xib (если используется)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     
     // MARK: - Private Properties
     private let emojis = ["🙂", "😻", "🌺", "🐶", "❤️", "😱", "😇", "😡", "🥶", "🤔", "🙌", "🍔", "🥦", "🏓", "🥇", "🎸", "🏝️", "😪"]
@@ -30,6 +43,8 @@ final class NewHabitViewController: UIViewController {
     private var selectedCategory: String = "Важное"
     private var selectedSchedule: [Weekday] = []
     private var selectedDaysCount: Int = 0
+    
+
     
     
     // MARK: - UI Elements
@@ -310,13 +325,16 @@ final class NewHabitViewController: UIViewController {
     }
     
     private func showCategoryScreen() {
-        let categoryVC = CategoryViewController()
-        categoryVC.delegate = self
-        categoryVC.modalPresentationStyle = .pageSheet
-        present(categoryVC, animated: true)
-        print("CategoryViewController показан")
+        // Создаем экран выбора, передаем store и текущую выбранную категорию
+        guard let store = trackerStore else { return }
+        let selectVC = SelectCategoryViewController(store: store, selectedTitle: selectedCategory)
+        selectVC.delegate = self
+        
+        let navController = UINavigationController(rootViewController: selectVC)
+        navController.modalPresentationStyle = .automatic
+        present(navController, animated: true)
     }
-    
+
     private func showScheduleScreen() {
         let scheduleVC = ScheduleViewController()
         scheduleVC.delegate = self
@@ -369,10 +387,9 @@ extension NewHabitViewController: UITableViewDelegate {
     }
 }
 
-// MARK: - CategoryViewControllerDelegate
-extension NewHabitViewController: CategoryViewControllerDelegate {
-    func didSelectCategory(_ category: String) {
-        selectedCategory = category
+extension NewHabitViewController: SelectCategoryViewControllerDelegate {
+    func didSelectCategory(_ title: String) {
+        selectedCategory = title
         tableView.reloadRows(at: [IndexPath(row: 0, section: 0)], with: .automatic)
         updateCreateButtonState()
     }

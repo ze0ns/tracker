@@ -21,6 +21,8 @@ final class IrregularHabitViewController: UIViewController {
     
     private var selectedCategory: String = "Важное"
     private var selectedSchedule: [Weekday] = []
+
+    private let trackerStore = TrackerStore()
     
     // MARK: - UI Elements
  
@@ -190,10 +192,9 @@ final class IrregularHabitViewController: UIViewController {
     }
     
     private func showCategoryScreen() {
-        let categoryVC = CategoryViewController()
-        categoryVC.delegate = self
-        categoryVC.modalPresentationStyle = .pageSheet
-        present(categoryVC, animated: true)
+        let categoryVC = CategoryViewController(store: self.trackerStore)
+        categoryVC.modalPresentationStyle = .automatic
+        self.present(categoryVC, animated: true)
         print("CategoryViewController показан")
     }
 

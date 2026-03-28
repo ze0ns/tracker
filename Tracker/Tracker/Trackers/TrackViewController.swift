@@ -178,7 +178,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     }
     
     @objc func tapAddTrack() {
-        let createVC = CreateTrackerViewController()
+        let createVC = CreateTrackerViewController(trackerStore: trackerStore)
         
         createVC.onTrackerCreated = { [weak self] tracker, category in
             self?.didCreateHabit(tracker, category: category)

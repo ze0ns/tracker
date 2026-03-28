@@ -20,6 +20,18 @@ final class CreateTrackerViewController: UIViewController {
     // Замыкание для передачи данных
     var onTrackerCreated: ((Tracker, String) -> Void)?
     
+    weak var trackerStore: TrackerStore?
+    
+    // 2. Создаем кастомный инициализатор
+    init(trackerStore: TrackerStore) {
+        self.trackerStore = trackerStore
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    // Обязательный инициализатор для storyboard/xib (если используется)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     // MARK: - UI Elements
     
     private let titleLabel: UILabel = {
@@ -99,7 +111,8 @@ final class CreateTrackerViewController: UIViewController {
     
     // MARK: - Actions
     @objc private func habitButtonTapped() {
-        let newHabitVC = NewHabitViewController()
+        guard let store = trackerStore else { return }
+        let newHabitVC = NewHabitViewController(trackerStore: store)
         
         // ПЕРЕДАЕМ ЗАМЫКАНИЕ ДАЛЬШЕ
         newHabitVC.onTrackerCreated = { [weak self] tracker, category in

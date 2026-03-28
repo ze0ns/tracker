@@ -235,4 +235,34 @@ class TrackerStore {
         
         return TrackerRecord(trackID: trackerId, trackDate: dateString)
     }
+
+    /// Создает новую категорию
+    /// - Parameter title: Название категории
+    /// - Returns: true если успешно, false если такая категория уже есть
+    @discardableResult
+    func createCategory(title: String) -> Bool {
+        // Проверяем, существует ли уже такая категория
+        let fetchRequest: NSFetchRequest<TrackerCategoryCD> = TrackerCategoryCD.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "title == %@", title)
+        
+        do {
+            let results = try context.fetch(fetchRequest)
+            if results.first != nil {
+                print("Категория '\(title)' уже существует")
+                return false
+            }
+            
+            // Создаем новую
+            let newCategory = TrackerCategoryCD(context: context)
+            newCategory.title = title
+            
+            saveContext()
+            loadData() // Обновляем кэш
+            return true
+            
+        } catch {
+            print("Ошибка создания категории: \(error)")
+            return false
+        }
+    }
 }
