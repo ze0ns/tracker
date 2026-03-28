@@ -97,7 +97,8 @@ final class SelectCategoryViewController: UIViewController {
             tableView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 24),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            tableView.heightAnchor.constraint(greaterThanOrEqualToConstant: 100), // Минимальная высота
+            tableView.bottomAnchor.constraint(equalTo: addButton.topAnchor, constant: -16),
+            
             
             addButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             addButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
@@ -130,7 +131,7 @@ final class SelectCategoryViewController: UIViewController {
 extension SelectCategoryViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return viewModel.numberOfRows()
+       return viewModel.numberOfRows()
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -149,6 +150,7 @@ extension SelectCategoryViewController: UITableViewDataSource, UITableViewDelega
         }
         
         cell.backgroundColor = .ypBackgroundDay // Или ваш цвет фона ячеек
+        print(content.text)
         return cell
     }
     
