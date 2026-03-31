@@ -18,12 +18,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         let hasSeenOnboarding = UserDefaults.standard.bool(forKey: "hasSeenOnboarding")
         
-        if !hasSeenOnboarding {
-            showOnboarding()
-        } else {
-            showMainApp()
-        }
-        
+//        if !hasSeenOnboarding {
+//            showOnboarding()
+//        } else {
+//            showMainApp()
+//        }
+        showOnboarding()
         window?.makeKeyAndVisible()
     }
     private func showOnboarding() {

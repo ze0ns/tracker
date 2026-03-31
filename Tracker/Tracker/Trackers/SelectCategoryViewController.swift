@@ -32,6 +32,21 @@ final class SelectCategoryViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
+   
+    private lazy var dymmy: UIImageView = {
+        let dymmy = UIImageView()
+        dymmy.contentMode = .scaleAspectFit
+        dymmy.image = UIImage(resource: .dymmy)
+        dymmy.translatesAutoresizingMaskIntoConstraints = false
+        return dymmy
+    }()
+    private lazy var dymmyLabel: UILabel = {
+        let dymmyLabel = UILabel()
+        dymmyLabel.text = "Привычки и события можно объединить по смыслу"
+        dymmyLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        dymmyLabel.translatesAutoresizingMaskIntoConstraints = false
+        return dymmyLabel
+    }()
     
     private lazy var tableView: UITableView = {
         let tableView = UITableView()
@@ -47,7 +62,7 @@ final class SelectCategoryViewController: UIViewController {
         let button = UIButton(type: .system)
         button.setTitle("Добавить категорию", for: .normal)
         button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = .black
+        button.backgroundColor = .ypBlackDay
         button.layer.cornerRadius = 16
         button.titleLabel?.font = .systemFont(ofSize: 17, weight: .medium)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -72,8 +87,23 @@ final class SelectCategoryViewController: UIViewController {
         super.viewDidLoad()
         setupView()
         setupConstraints()
+        HideDymmy()
         bindViewModel()
         viewModel.fetchCategories()
+    }
+    
+    //MARK: - Visible Categories
+    
+    private func HideDymmy(){
+        if !viewModel.categories.isEmpty {
+            dymmy.isHidden = false
+            dymmyLabel.isHidden = false
+            tableView.isHidden = true
+        } else {
+            dymmy.isHidden = true
+            dymmyLabel.isHidden = true
+            tableView.isHidden = false
+        }
     }
     
     // MARK: - Setup
@@ -83,6 +113,8 @@ final class SelectCategoryViewController: UIViewController {
         view.addSubview(titleLabel)
         view.addSubview(tableView)
         view.addSubview(addButton)
+        view.addSubview(dymmy)
+        view.addSubview(dymmyLabel)
         
         tableView.delegate = self
         tableView.dataSource = self
@@ -103,7 +135,16 @@ final class SelectCategoryViewController: UIViewController {
             addButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             addButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             addButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
-            addButton.heightAnchor.constraint(equalToConstant: 60)
+            addButton.heightAnchor.constraint(equalToConstant: 60),
+            
+            
+            dymmy.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            dymmy.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            dymmy.heightAnchor.constraint(equalToConstant: 80),
+            dymmy.widthAnchor.constraint(equalToConstant: 80),
+            
+            dymmyLabel.topAnchor.constraint(equalTo: dymmy.bottomAnchor, constant: 8),
+            dymmyLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
         ])
     }
     

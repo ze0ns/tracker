@@ -21,23 +21,14 @@ class OnboardingContentViewController: UIViewController {
     
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.boldSystemFont(ofSize: 28)
+        label.font = UIFont.boldSystemFont(ofSize: 32)
         label.textAlignment = .center
         label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
-    
-    private let stackView: UIStackView = {
-        let sv = UIStackView()
-        sv.axis = .vertical
-        sv.spacing = 20
-        sv.alignment = .center
-        sv.translatesAutoresizingMaskIntoConstraints = false
-        return sv
-    }()
-    
+
     // MARK: - Properties
     var page: OnboardingPage?
     
@@ -50,21 +41,20 @@ class OnboardingContentViewController: UIViewController {
     
     // MARK: - Setup
     private func setupUI() {
-        view.addSubview(stackView)
-        
-        stackView.addArrangedSubview(imageView)
-        stackView.addArrangedSubview(titleLabel)
+        view.addSubview(imageView)
+        view.addSubview(titleLabel)
         
         NSLayoutConstraint.activate([
-            stackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            stackView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
-           
             imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             imageView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             imageView.topAnchor.constraint(equalTo: view.topAnchor),
             imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            //titleLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            titleLabel.topAnchor.constraint(equalTo: view.topAnchor,constant: 460),
+            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
         ])
     }
     

@@ -66,14 +66,12 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     private var visibleCategories: [TrackerCategory] {
         let calendar = Calendar.current
         let calendarWeekday = calendar.component(.weekday, from: datePicker.date)
-        // Преобразование календарного дня (1=Вс ... 7=Сб) в наш формат (1=Пн ... 7=Вс)
         let requiredWeekdayIndex = (calendarWeekday + 5) % 7 + 1
         
         guard let requiredDay = Weekday(rawValue: requiredWeekdayIndex) else {
             return []
         }
-        
-        // Фильтруем категории из Store
+
         return trackerStore.categories.compactMap { category in
             let filteredTrackers = category.arrayTracker.filter { tracker in
                 return tracker.schedule.contains(requiredDay)
@@ -92,8 +90,6 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         setupViews()
         setupConstraints()
         configureAppearance()
-        
-        // Явная загрузка данных при старте
         trackerStore.loadData()
         collectionView.reloadData()
         updatePlaceholderVisibility()
@@ -101,8 +97,6 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
-        // Обновляем данные при появлении экрана (на случай изменений из других мест)
         trackerStore.loadData()
         collectionView.reloadData()
         updatePlaceholderVisibility()

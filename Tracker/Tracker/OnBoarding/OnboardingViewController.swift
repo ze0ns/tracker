@@ -33,8 +33,8 @@ class OnboardingViewController: UIViewController {
     private let startButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Вот это технологии!", for: .normal)
-        button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 18)
-        button.backgroundColor = .systemBlue
+        button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 16)
+        button.backgroundColor = .ypBlackDay
         button.setTitleColor(.white, for: .normal)
         button.layer.cornerRadius = 12
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -111,10 +111,10 @@ class OnboardingViewController: UIViewController {
             pageControl.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -80),
             pageControl.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             
-            startButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+            startButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -50),
             startButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             startButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            startButton.heightAnchor.constraint(equalToConstant: 50),
+            startButton.heightAnchor.constraint(equalToConstant: 60),
 
         ])
         
