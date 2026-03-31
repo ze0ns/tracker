@@ -19,10 +19,12 @@ final class TrackCell: UICollectionViewCell {
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
-    private let trackEmoji: UIImageView = {
-        let trackEmoji = UIImageView()
-        trackEmoji.image = UIImage(resource: .emoji)
-        trackEmoji.translatesAutoresizingMaskIntoConstraints = false
+    private let trackEmoji: UILabel = {
+        let trackEmoji = UILabel()
+        trackEmoji.text = "@"
+        trackEmoji.font = .systemFont(ofSize: 32)
+        trackEmoji.textColor = .ypBlackDay
+        trackEmoji.textAlignment = .center
         return trackEmoji
     }()
 
@@ -181,8 +183,10 @@ final class TrackCell: UICollectionViewCell {
     
     // MARK: - Configuration
     
-    func configure(id: String, jobsName: String, daysCount: Int, isDone: Bool, date: Date?) {
+    func configure(id: String,color: String, emojiImage: String , jobsName: String, daysCount: Int, isDone: Bool, date: Date?) {
         self.trackerID = id
+        self.cardContainerView.backgroundColor = UIColor(hex: color)
+        self.trackEmoji.text = emojiImage
         self.trackJobs.text = jobsName
         self.completedDaysCount = daysCount
         self.isCompleted = isDone
@@ -209,8 +213,6 @@ final class TrackCell: UICollectionViewCell {
             actionButton.isUserInteractionEnabled = true
             actionButton.alpha = 1.0
         }
-        // -----------------------------
-        
         updateStatusLabel()
         updateButtonAppearance()
     }

@@ -185,9 +185,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     
     // MARK: - NewHabitViewControllerDelegate Implementation
     func didCreateHabit(_ habit: Tracker, category: String) {
-        // Сохраняем через Store
         trackerStore.addTracker(habit, toCategory: category)
-        
         collectionView.reloadData()
         updatePlaceholderVisibility()
         print("Трекер '\(habit.name)' добавлен в категорию '\(category)' и сохранен в CoreData")
@@ -227,6 +225,8 @@ extension TrackViewController: UICollectionViewDataSource {
         
         cell.configure(
             id: tracker.id.uuidString,
+            color: tracker.color,
+            emojiImage: tracker.emodji,
             jobsName: tracker.name,
             daysCount: daysCount,
             isDone: isDone,

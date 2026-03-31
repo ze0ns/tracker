@@ -218,7 +218,7 @@ class TrackerStore {
         return Tracker(
             id: id,
             name: name,
-            color: object.color ?? "",
+            color: object.color ?? "#FF5733",
             emodji: object.emodji ?? "",
             schedule: schedule
         )
