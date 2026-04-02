@@ -11,6 +11,7 @@ final class CustomTabBar: UIView {
     }
     private var items: [UITabBarItem] = []
     private var buttons: [UIButton] = []
+    
     init(items: [UITabBarItem]) {
         self.items = items
         super.init(frame: .zero)
@@ -21,6 +22,7 @@ final class CustomTabBar: UIView {
     required init?(coder: NSCoder) {
         nil
     }
+    
     // MARK: - Private Methods
     private func setupViews() {
         for (index, item) in items.enumerated() {
@@ -34,6 +36,8 @@ final class CustomTabBar: UIView {
                     for: .normal
                 )
             }
+            
+            // Настройка цветов
             button.setTitleColor(.secondaryLabel, for: .normal)
             button.setTitleColor(.label, for: .selected)
             button.tintColor = .secondaryLabel
@@ -45,18 +49,21 @@ final class CustomTabBar: UIView {
         
         updateSelection()
     }
+    
     // MARK: - Actions
     @objc private func buttonTapped(_ sender: UIButton) {
         selectedIndex = sender.tag
         onItemSelected?(selectedIndex)
-        
     }
+    
     private func updateSelection() {
         for (index, button) in buttons.enumerated() {
             button.isSelected = (index == selectedIndex)
+            // Используем ваши цвета .blue и .gray для примера, или .ypBlackDay/.ypGray
             button.tintColor = index == selectedIndex ? .blue : .gray
         }
     }
+    
     // MARK: - Public Methods , UI
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -72,17 +79,26 @@ final class CustomTabBar: UIView {
                 height: height
             )
             
-            button.imageEdgeInsets = UIEdgeInsets(top: 6, left: 0, bottom: 2, right: 0)
+            // 1. Общий отступ содержимого кнопки.
+            // Уменьшаем нижний отступ, чтобы "втолкнуть" контент вверх.
+            button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 40, right: 0)
+            
+            // 2. Смещение иконки.
+            // top: 8 добавляет пространство сверху, поднимая иконку выше относительно центра.
+            // bottom: -8 компенсирует это смещение, чтобы не обрезалось.
+            button.imageEdgeInsets = UIEdgeInsets(top: 8, left: 0, bottom: -8, right: 0)
+            
+            // Если нужно сместить текст (если он есть):
             button.titleEdgeInsets = UIEdgeInsets(
                 top: 0,
-                left: -button.imageView!.frame.width,
-                bottom: -6,
+                left: -(button.imageView?.frame.width ?? 0),
+                bottom: -30, // Опускаем текст еще ниже
                 right: 0
             )
         }
     }
+    
     override var intrinsicContentSize: CGSize {
         return CGSize(width: UIView.noIntrinsicMetric, height: height)
     }
 }
-

@@ -1,11 +1,3 @@
-//
-//  OnboardingViewControllerDelegate.swift
-//  Tracker
-//
-//  Created by Oschepkov Aleksandr on 31.03.2026.
-//
-
-
 // OnboardingViewController.swift
 import UIKit
 
@@ -24,8 +16,11 @@ class OnboardingViewController: UIViewController {
     
     private let pageControl: UIPageControl = {
         let pc = UIPageControl()
-        pc.currentPageIndicatorTintColor = .systemBlue
-        pc.pageIndicatorTintColor = .lightGray
+        // Активная точка: КРАСНАЯ
+        pc.currentPageIndicatorTintColor = .ypBlackDay
+        pc.pageIndicatorTintColor = .darkGray
+        pc.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
+        
         pc.translatesAutoresizingMaskIntoConstraints = false
         return pc
     }()
@@ -107,11 +102,13 @@ class OnboardingViewController: UIViewController {
         view.addSubview(pageControl)
         view.addSubview(startButton)
         
+        // Учитываем увеличенный масштаб PageControl в отступах (scale 1.5)
         NSLayoutConstraint.activate([
-            pageControl.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -80),
+            // Поднимаем PageControl чуть выше, так как он стал крупнее
+            pageControl.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -164),
             pageControl.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             
-            startButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -50),
+            startButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -84),
             startButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             startButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             startButton.heightAnchor.constraint(equalToConstant: 60),

@@ -8,7 +8,7 @@ import UIKit
 
 final class MainTabBarController: UITabBarController {
     
-    private let customTabBarHeight: CGFloat = 50
+    private let customTabBarHeight: CGFloat = 84
     private var customTabBar: CustomTabBar?
     
     override func viewDidLoad() {
@@ -30,28 +30,26 @@ final class MainTabBarController: UITabBarController {
         
         view.addSubview(tabBar)
         
-        // Сохраняем ссылку на tabBar
         self.customTabBar = tabBar
         
         // MARK: - Добавление границы (линии сверху)
         let topBorderView = UIView()
-        topBorderView.backgroundColor = .lightGray // Или ваш цвет: .ypGray
+        topBorderView.backgroundColor = .lightGray
         topBorderView.translatesAutoresizingMaskIntoConstraints = false
         tabBar.addSubview(topBorderView)
         
         NSLayoutConstraint.activate([
-            // Констрейнты для линии: верх, лево, право и высота
+
+  //          tabBar.topAnchor.constraint(equalTo: topBorderView.topAnchor),
+            tabBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tabBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tabBar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            tabBar.heightAnchor.constraint(equalToConstant: customTabBarHeight),
+            
             topBorderView.topAnchor.constraint(equalTo: tabBar.topAnchor),
             topBorderView.leadingAnchor.constraint(equalTo: tabBar.leadingAnchor),
             topBorderView.trailingAnchor.constraint(equalTo: tabBar.trailingAnchor),
-            topBorderView.heightAnchor.constraint(equalToConstant: 0.5), // Толщина линии
-        ])
-        
-        NSLayoutConstraint.activate([
-            tabBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tabBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tabBar.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -33),
-            tabBar.heightAnchor.constraint(equalToConstant: customTabBarHeight)
+            topBorderView.heightAnchor.constraint(equalToConstant: 0.5),
         ])
     }
     
@@ -111,7 +109,8 @@ extension MainTabBarController {
     private func updateTabBarSafeArea() {
         guard let tabBar = customTabBar else { return }
         if view.safeAreaInsets.bottom > 0 {
-            tabBar.height = customTabBarHeight + view.safeAreaInsets.bottom
+            tabBar.height = customTabBarHeight
+           // tabBar.height = customTabBarHeight + view.safeAreaInsets.bottom
         }
     }
 }
