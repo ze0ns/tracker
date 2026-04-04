@@ -192,7 +192,7 @@ final class IrregularHabitViewController: UIViewController {
     }
     
     private func showCategoryScreen() {
-        let categoryVC = CategoryViewController(store: self.trackerStore)
+        let categoryVC = CreateCategoryViewController(store: self.trackerStore)
         categoryVC.modalPresentationStyle = .automatic
         self.present(categoryVC, animated: true)
         print("CategoryViewController показан")

@@ -5,7 +5,7 @@ protocol CategoryViewControllerDelegate: AnyObject {
 }
 
 
-final class CategoryViewController: UIViewController {
+final class CreateCategoryViewController: UIViewController {
      weak var delegate: CategoryViewControllerDelegate?
       var dismissCallback: (() -> Void)?
 
@@ -125,7 +125,7 @@ final class CategoryViewController: UIViewController {
 }
 
 // MARK: - CategoryViewModelDelegate
-extension CategoryViewController: CategoryViewModelDelegate {
+extension CreateCategoryViewController: CategoryViewModelDelegate {
     
     func didUpdateDoneButtonState(isEnabled: Bool) {
         doneButton.isEnabled = isEnabled

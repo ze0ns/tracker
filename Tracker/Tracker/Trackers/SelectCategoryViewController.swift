@@ -7,7 +7,6 @@
 
 import UIKit
 
-// Протокол для возврата выбранной категории на предыдущий экран
 protocol SelectCategoryViewControllerDelegate: AnyObject {
     func didSelectCategory(_ title: String)
 }
@@ -17,11 +16,12 @@ final class SelectCategoryViewController: UIViewController {
     // MARK: - Properties
     private var viewModel: SelectCategoryViewModel!
     weak var delegate: SelectCategoryViewControllerDelegate?
-    
-    // Замыкание как альтернатива делегату (удобно при present)
     var onCategorySelected: ((String) -> Void)?
     
     // MARK: - UI Elements
+    // 1. Убираем переменную Int и создаем NSLayoutConstraint
+    private var tableViewHeightConstraint: NSLayoutConstraint!
+    private let cellHeight: CGFloat = 75 // Высота одной ячейки
     
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
@@ -40,6 +40,7 @@ final class SelectCategoryViewController: UIViewController {
         dymmy.translatesAutoresizingMaskIntoConstraints = false
         return dymmy
     }()
+    
     private lazy var dymmyLabel: UILabel = {
         let dymmyLabel = UILabel()
         dymmyLabel.text = "Привычки и события можно объединить по смыслу"
@@ -51,12 +52,13 @@ final class SelectCategoryViewController: UIViewController {
     private lazy var tableView: UITableView = {
         let tableView = UITableView()
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "CategoryCell")
-        tableView.backgroundColor = .white
+        tableView.backgroundColor = .ypBackgroundDay // Лучше использовать ваш цвет фона
         tableView.layer.cornerRadius = 16
         tableView.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
         tableView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.rowHeight = 75
+        tableView.rowHeight = cellHeight
         tableView.tableFooterView = UIView(frame: CGRect(x: 0, y: 0, width: tableView.frame.size.width, height: 1))
+        tableView.isScrollEnabled = false // Отключаем скролл, так как таблица маленькая
         return tableView
     }()
     
@@ -73,7 +75,6 @@ final class SelectCategoryViewController: UIViewController {
     }()
     
     // MARK: - Init
-    
     init(store: TrackerStore, selectedTitle: String?) {
         super.init(nibName: nil, bundle: nil)
         self.viewModel = SelectCategoryViewModel(store: store, selectedCategoryTitle: selectedTitle)
@@ -84,32 +85,25 @@ final class SelectCategoryViewController: UIViewController {
     }
     
     // MARK: - Lifecycle
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
         setupConstraints()
-        HideDymmy()
         bindViewModel()
         viewModel.fetchCategories()
+        updateTableViewHeight() // Сразу обновляем высоту
     }
     
     //MARK: - Visible Categories
-    
-    private func HideDymmy(){
-        if !viewModel.categories.isEmpty {
-            dymmy.isHidden = false
-            dymmyLabel.isHidden = false
-            tableView.isHidden = true
-        } else {
-            dymmy.isHidden = true
-            dymmyLabel.isHidden = true
-            tableView.isHidden = false
-        }
+    private func HideDymmy() {
+        // Логика инверсии: если категории ЕСТЬ -> скрываем заглушку, показываем таблицу
+        let isEmpty = viewModel.categories.isEmpty
+        dymmy.isHidden = !isEmpty
+        dymmyLabel.isHidden = !isEmpty
+        tableView.isHidden = isEmpty
     }
     
     // MARK: - Setup
-    
     private func setupView() {
         view.backgroundColor = .white
         view.addSubview(titleLabel)
@@ -123,6 +117,9 @@ final class SelectCategoryViewController: UIViewController {
     }
     
     private func setupConstraints() {
+        // 2. Инициализируем констрейнт и активируем его
+        tableViewHeightConstraint = tableView.heightAnchor.constraint(equalToConstant: cellHeight)
+        
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -131,14 +128,12 @@ final class SelectCategoryViewController: UIViewController {
             tableView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 24),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            tableView.bottomAnchor.constraint(equalTo: addButton.topAnchor, constant: -16),
-            
+            tableViewHeightConstraint, // Добавляем констрейнт высоты
             
             addButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             addButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             addButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
             addButton.heightAnchor.constraint(equalToConstant: 60),
-            
             
             dymmy.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             dymmy.centerYAnchor.constraint(equalTo: view.centerYAnchor),
@@ -155,18 +150,20 @@ final class SelectCategoryViewController: UIViewController {
     }
     
     // MARK: - Actions
-    
     @objc private func addButtonTapped() {
-        // Переход к экрану создания категории (который мы написали ранее)
-        // Нам нужно передать store, чтобы новый экран мог сохранить данные
-        let createCategoryVC = CategoryViewController(store: viewModel.trackerStore)
-        
-        // Обновляем список после закрытия экрана создания
+        let createCategoryVC = CreateCategoryViewController(store: viewModel.trackerStore)
         createCategoryVC.dismissCallback = { [weak self] in
             self?.viewModel.fetchCategories()
         }
-        
         present(createCategoryVC, animated: true)
+    }
+    
+    // MARK: - Height Update Logic
+    private func updateTableViewHeight() {
+        let count = viewModel.numberOfRows()
+        // 3. Меняем свойство .constant у констрейнта
+        tableViewHeightConstraint.constant = CGFloat(count) * cellHeight
+        HideDymmy()
     }
 }
 
@@ -174,7 +171,7 @@ final class SelectCategoryViewController: UIViewController {
 extension SelectCategoryViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-       return viewModel.numberOfRows()
+        return viewModel.numberOfRows()
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -185,15 +182,13 @@ extension SelectCategoryViewController: UITableViewDataSource, UITableViewDelega
         content.text = category.nameTrackerCategory
         cell.contentConfiguration = content
         
-        // Отображаем галочку, если это выбранная категория
         if category.nameTrackerCategory == viewModel.selectedCategoryTitle {
             cell.accessoryType = .checkmark
         } else {
             cell.accessoryType = .none
         }
         
-        cell.backgroundColor = .ypBackgroundDay // Или ваш цвет фона ячеек
-        print(content.text)
+        cell.backgroundColor = .ypBackgroundDay
         return cell
     }
     
@@ -207,15 +202,14 @@ extension SelectCategoryViewController: UITableViewDataSource, UITableViewDelega
 extension SelectCategoryViewController: SelectCategoryViewModelDelegate {
     
     func didUpdateCategories() {
+        // 4. При обновлении данных пересчитываем высоту
+        updateTableViewHeight()
         tableView.reloadData()
     }
     
     func didSelectCategory(_ title: String) {
-        // Сообщаем предыдущему экрану о выборе
         delegate?.didSelectCategory(title)
         onCategorySelected?(title)
-        
-        // Закрываем экран выбора
         dismiss(animated: true)
     }
 }
