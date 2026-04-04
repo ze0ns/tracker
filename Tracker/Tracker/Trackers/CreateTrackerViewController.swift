@@ -117,7 +117,7 @@ final class CreateTrackerViewController: UIViewController {
         // ПЕРЕДАЕМ ЗАМЫКАНИЕ ДАЛЬШЕ
         newHabitVC.onTrackerCreated = { [weak self] tracker, category in
             self?.onTrackerCreated?(tracker, category)
-            self?.dismiss(animated: true) // Закрываем всю цепочку модальных окон
+            self?.dismiss(animated: true)
         }
         let navController = UINavigationController(rootViewController: newHabitVC)
         navController.modalPresentationStyle = .automatic
@@ -125,7 +125,14 @@ final class CreateTrackerViewController: UIViewController {
     }
     
     @objc private func irregularEventButtonTapped() {
-        let secondVC = IrregularHabitViewController()
+        guard let store = trackerStore else { return }
+        let secondVC = IrregularHabitViewController(trackerStore: store)
+        
+        // ПЕРЕДАЕМ ЗАМЫКАНИЕ ДАЛЬШЕ
+        secondVC.onTrackerCreated = { [weak self] tracker, category in
+            self?.onTrackerCreated?(tracker, category)
+            self?.dismiss(animated: true)
+        }
         let navController = UINavigationController(rootViewController: secondVC)
         navController.modalPresentationStyle = .automatic
         self.present(navController, animated: true)
