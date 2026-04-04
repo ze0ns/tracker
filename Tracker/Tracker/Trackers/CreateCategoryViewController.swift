@@ -1,4 +1,11 @@
 
+//
+//  CreateCategoryViewController.swift
+//  Image Feed
+//
+//  Created by Oschepkov Aleksandr on 09.03.2026.
+//
+
 import UIKit
 protocol CategoryViewControllerDelegate: AnyObject {
     func didSelectCategory(_ category: String)

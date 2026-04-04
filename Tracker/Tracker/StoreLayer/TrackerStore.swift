@@ -10,7 +10,7 @@ import CoreData
 
 // MARK: - TrackerStore (Слой работы с данными)
 
-class TrackerStore {
+final class TrackerStore {
     
     private let context: NSManagedObjectContext
     

@@ -198,11 +198,12 @@ final class NewHabitViewController: UIViewController {
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 36),
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            titleLabel.heightAnchor.constraint(equalToConstant: 22),
             
-            scrollView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20),
+            scrollView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 45),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: buttonsStackView.topAnchor, constant: -20),
@@ -361,10 +362,15 @@ extension NewHabitViewController: UITableViewDataSource {
         if indexPath.row == 0 {
             cell.configure(title: "Категория", value: selectedCategory)
         } else {
-            let scheduleText = selectedSchedule.map { $0.fullName }.joined(separator: ", ")
+            let scheduleText: String
+            if selectedSchedule.count == 7 {
+                scheduleText = "Каждый день"
+            } else {
+                scheduleText = selectedSchedule.map { $0.shortName }.joined(separator: ", ")
+            }
+            
             cell.configure(title: "Расписание", value: scheduleText)
         }
-        
         
         cell.backgroundColor = .ypBackgroundDay
         

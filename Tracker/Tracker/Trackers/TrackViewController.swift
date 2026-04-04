@@ -58,6 +58,11 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         picker.translatesAutoresizingMaskIntoConstraints = false
         return picker
     }()
+    private lazy var dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd.MM.yyyy"
+        return formatter
+    }()
     
     let collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
     
@@ -213,7 +218,6 @@ extension TrackViewController: UICollectionViewDataSource {
         let currentDate = datePicker.date
         
         // Форматируем дату для сравнения
-        let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "dd.MM.yyyy"
         let dateString = dateFormatter.string(from: currentDate)
         

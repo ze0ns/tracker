@@ -26,6 +26,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         window?.makeKeyAndVisible()
     }
+    
+    //MARK: Private Method
     private func showOnboarding() {
         let onboardingVC = OnboardingViewController()
         onboardingVC.delegate = self
