@@ -11,8 +11,8 @@ protocol TrackViewControllerDelegate: AnyObject {
 class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     
     // MARK: - Properties
-    // Хранилище управляет данными
     private let trackerStore = TrackerStore()
+    private var searchText: String = "" // Добавлено для хранения текста поиска
     
     // MARK: - UI Elements
     
@@ -33,6 +33,49 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         nameFunction.translatesAutoresizingMaskIntoConstraints = false
         return nameFunction
     }()
+    
+   
+    // MARK: - Search Container
+    private lazy var searchContainerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .ypGreyOp12
+        view.layer.cornerRadius = 10
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.clipsToBounds = true
+        return view
+    }()
+
+    private lazy var searchTextField: UITextField = {
+        let textField = UITextField()
+        textField.placeholder = "Поиск"
+    
+        textField.backgroundColor = .clear
+        
+        let searchIcon = UIImageView(image: UIImage(systemName: "magnifyingglass"))
+        searchIcon.tintColor = .ypGray
+        searchIcon.contentMode = .center
+
+        let iconContainerView = UIView(frame: CGRect(x: 0, y: 0, width: 40, height: 20))
+        searchIcon.frame = CGRect(x: 10, y: 0, width: 20, height: 20) 
+        iconContainerView.addSubview(searchIcon)
+        
+        textField.leftView = iconContainerView
+        textField.leftViewMode = .always
+
+        textField.textColor = .ypBlackDay
+        textField.font = .systemFont(ofSize: 17)
+        textField.delegate = self
+        
+        textField.attributedPlaceholder = NSAttributedString(
+            string: "Поиск",
+            attributes: [NSAttributedString.Key.foregroundColor: UIColor.ypGray]
+        )
+        
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        return textField
+    }()
+    
+    
     
     private lazy var dymmy: UIImageView = {
         let dymmy = UIImageView()
@@ -78,9 +121,21 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         }
 
         return trackerStore.categories.compactMap { category in
-            let filteredTrackers = category.arrayTracker.filter { tracker in
+            // Фильтруем трекеры по дню
+            let trackersForDay = category.arrayTracker.filter { tracker in
                 return tracker.schedule.contains(requiredDay)
             }
+            
+            // Если есть текст поиска, фильтруем еще и по названию
+            let filteredTrackers: [Tracker]
+            if searchText.isEmpty {
+                filteredTrackers = trackersForDay
+            } else {
+                filteredTrackers = trackersForDay.filter { tracker in
+                    return tracker.name.lowercased().contains(searchText.lowercased())
+                }
+            }
+            
             if !filteredTrackers.isEmpty {
                 return TrackerCategory(nameTrackerCategory: category.nameTrackerCategory, arrayTracker: filteredTrackers)
             } else {
@@ -109,9 +164,13 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     
     // MARK: - Setup
     private func setupViews() {
-        view.backgroundColor = .white
+        view.backgroundColor = .ypWhiteDay
         view.addSubview(datePicker)
         view.addSubview(nameFunction)
+    
+        view.addSubview(searchContainerView)
+        searchContainerView.addSubview(searchTextField)
+        
         view.addSubview(collectionView)
         view.addSubview(addTrack)
         view.addSubview(dymmy)
@@ -139,18 +198,29 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            addTrack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 1),
+            addTrack.topAnchor.constraint(equalTo: view.topAnchor, constant: 57),
             addTrack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 6),
             addTrack.heightAnchor.constraint(equalToConstant: 42),
             addTrack.widthAnchor.constraint(equalToConstant: 42),
             
-            datePicker.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 5),
+            datePicker.topAnchor.constraint(equalTo: view.topAnchor, constant: 57),
             datePicker.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            datePicker.heightAnchor.constraint(equalToConstant: 34),
             
             nameFunction.topAnchor.constraint(equalTo: addTrack.bottomAnchor, constant: 1),
             nameFunction.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             
-            collectionView.topAnchor.constraint(equalTo: nameFunction.bottomAnchor, constant: 20),
+            searchContainerView.topAnchor.constraint(equalTo: nameFunction.bottomAnchor, constant: 7),
+            searchContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            searchContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            searchContainerView.heightAnchor.constraint(equalToConstant: 36),
+            
+            searchTextField.topAnchor.constraint(equalTo: searchContainerView.topAnchor),
+            searchTextField.bottomAnchor.constraint(equalTo: searchContainerView.bottomAnchor),
+            searchTextField.leadingAnchor.constraint(equalTo: searchContainerView.leadingAnchor),
+            searchTextField.trailingAnchor.constraint(equalTo: searchContainerView.trailingAnchor),
+            
+            collectionView.topAnchor.constraint(equalTo: searchContainerView.bottomAnchor, constant: 10),
             collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
@@ -262,6 +332,25 @@ extension TrackViewController: UICollectionViewDataSource {
     }
 }
 
+// MARK: - UITextFieldDelegate
+extension TrackViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+          textField.resignFirstResponder()
+          return true
+      }
+      
+      func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+          if let text = textField.text, let textRange = Range(range, in: text) {
+              let updatedText = text.replacingCharacters(in: textRange, with: string)
+              searchText = updatedText
+              collectionView.reloadData()
+              updatePlaceholderVisibility()
+          }
+          return true
+      }
+}
+
+// MARK: - UICollectionViewDelegateFlowLayout
 extension TrackViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
         return CGSize(width: collectionView.bounds.width, height: 50)

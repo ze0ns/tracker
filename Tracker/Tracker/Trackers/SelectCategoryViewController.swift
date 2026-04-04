@@ -19,9 +19,8 @@ final class SelectCategoryViewController: UIViewController {
     var onCategorySelected: ((String) -> Void)?
     
     // MARK: - UI Elements
-    // 1. Убираем переменную Int и создаем NSLayoutConstraint
     private var tableViewHeightConstraint: NSLayoutConstraint!
-    private let cellHeight: CGFloat = 75 // Высота одной ячейки
+    private let cellHeight: CGFloat = 75
     
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
@@ -52,13 +51,13 @@ final class SelectCategoryViewController: UIViewController {
     private lazy var tableView: UITableView = {
         let tableView = UITableView()
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "CategoryCell")
-        tableView.backgroundColor = .ypBackgroundDay // Лучше использовать ваш цвет фона
+        tableView.backgroundColor = .ypBackgroundDay
         tableView.layer.cornerRadius = 16
         tableView.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.rowHeight = cellHeight
         tableView.tableFooterView = UIView(frame: CGRect(x: 0, y: 0, width: tableView.frame.size.width, height: 1))
-        tableView.isScrollEnabled = false // Отключаем скролл, так как таблица маленькая
+        tableView.isScrollEnabled = false
         return tableView
     }()
     
@@ -96,7 +95,6 @@ final class SelectCategoryViewController: UIViewController {
     
     //MARK: - Visible Categories
     private func HideDymmy() {
-        // Логика инверсии: если категории ЕСТЬ -> скрываем заглушку, показываем таблицу
         let isEmpty = viewModel.categories.isEmpty
         dymmy.isHidden = !isEmpty
         dymmyLabel.isHidden = !isEmpty
@@ -117,7 +115,7 @@ final class SelectCategoryViewController: UIViewController {
     }
     
     private func setupConstraints() {
-        // 2. Инициализируем констрейнт и активируем его
+
         tableViewHeightConstraint = tableView.heightAnchor.constraint(equalToConstant: cellHeight)
         
         NSLayoutConstraint.activate([
@@ -128,7 +126,7 @@ final class SelectCategoryViewController: UIViewController {
             tableView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 24),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            tableViewHeightConstraint, // Добавляем констрейнт высоты
+            tableViewHeightConstraint,
             
             addButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             addButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
@@ -202,7 +200,6 @@ extension SelectCategoryViewController: UITableViewDataSource, UITableViewDelega
 extension SelectCategoryViewController: SelectCategoryViewModelDelegate {
     
     func didUpdateCategories() {
-        // 4. При обновлении данных пересчитываем высоту
         updateTableViewHeight()
         tableView.reloadData()
     }
