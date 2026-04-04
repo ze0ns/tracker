@@ -88,6 +88,8 @@ final class NewHabitViewController: UIViewController {
         tableView.layer.cornerRadius = 16
         tableView.separatorStyle = .singleLine
         tableView.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        tableView.rowHeight = 75
+        tableView.tableFooterView = UIView(frame: CGRect(x: 0, y: 0, width: tableView.frame.size.width, height: 1))
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
