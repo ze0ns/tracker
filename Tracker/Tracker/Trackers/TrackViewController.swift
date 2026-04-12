@@ -12,7 +12,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     
     // MARK: - Properties
     private let trackerStore = TrackerStore()
-    private var searchText: String = "" // Добавлено для хранения текста поиска
+    private var searchText: String = ""
     
     // MARK: - UI Elements
     
@@ -34,7 +34,6 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         return nameFunction
     }()
     
-   
     // MARK: - Search Container
     private lazy var searchContainerView: UIView = {
         let view = UIView()
@@ -48,7 +47,6 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     private lazy var searchTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "Поиск"
-    
         textField.backgroundColor = .clear
         
         let searchIcon = UIImageView(image: UIImage(systemName: "magnifyingglass"))
@@ -56,7 +54,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         searchIcon.contentMode = .center
 
         let iconContainerView = UIView(frame: CGRect(x: 0, y: 0, width: 40, height: 20))
-        searchIcon.frame = CGRect(x: 10, y: 0, width: 20, height: 20) 
+        searchIcon.frame = CGRect(x: 10, y: 0, width: 20, height: 20)
         iconContainerView.addSubview(searchIcon)
         
         textField.leftView = iconContainerView
@@ -74,8 +72,6 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
-    
-    
     
     private lazy var dymmy: UIImageView = {
         let dymmy = UIImageView()
@@ -121,12 +117,10 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         }
 
         return trackerStore.categories.compactMap { category in
-            // Фильтруем трекеры по дню
             let trackersForDay = category.arrayTracker.filter { tracker in
                 return tracker.schedule.contains(requiredDay)
             }
             
-            // Если есть текст поиска, фильтруем еще и по названию
             let filteredTrackers: [Tracker]
             if searchText.isEmpty {
                 filteredTrackers = trackersForDay
@@ -167,10 +161,8 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         view.backgroundColor = .ypWhiteDay
         view.addSubview(datePicker)
         view.addSubview(nameFunction)
-    
         view.addSubview(searchContainerView)
         searchContainerView.addSubview(searchTextField)
-        
         view.addSubview(collectionView)
         view.addSubview(addTrack)
         view.addSubview(dymmy)
@@ -260,9 +252,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     
     // MARK: - NewHabitViewControllerDelegate Implementation
     func didCreateHabit(_ habit: Tracker, category: String) {
-        // Сохраняем через Store
         trackerStore.addTracker(habit, toCategory: category)
-        
         collectionView.reloadData()
         updatePlaceholderVisibility()
         print("Трекер '\(habit.name)' добавлен в категорию '\(category)' и сохранен в CoreData")
@@ -287,33 +277,33 @@ extension TrackViewController: UICollectionViewDataSource {
         let tracker = visibleCategories[indexPath.section].arrayTracker[indexPath.row]
         let currentDate = datePicker.date
         
-        // Форматируем дату для сравнения
+        // Преобразуем строку цвета из CoreData в UIColor
+        // Используем расширение, которое мы добавили ранее (оно должно быть в проекте)
+        let color = UIColor(hex: tracker.color) ?? .ypColorSelection1
+        
         dateFormatter.dateFormat = "dd.MM.yyyy"
         let dateString = dateFormatter.string(from: currentDate)
         
-        // Проверяем выполнение через Store
         let isDone = trackerStore.completedTrackers.contains { record in
             record.trackID == tracker.id.uuidString && record.trackDate == dateString
         }
         
-        // Считаем дни
         let daysCount = trackerStore.completedTrackers.filter { $0.trackID == tracker.id.uuidString }.count
         
+        // Передаем emoji и color в ячейку
         cell.configure(
             id: tracker.id.uuidString,
             jobsName: tracker.name,
             daysCount: daysCount,
             isDone: isDone,
-            date: currentDate
+            date: currentDate,
+            emoji: tracker.emodji,
+            color: color
         )
         
         cell.onButtonTapped = { [weak self] in
             guard let self = self else { return }
-            
-            // Переключаем запись в CoreData
             self.trackerStore.toggleTrackerRecord(trackerId: tracker.id.uuidString, date: currentDate)
-            
-            // Обновляем ячейку
             self.collectionView.reloadItems(at: [indexPath])
         }
         
@@ -335,19 +325,19 @@ extension TrackViewController: UICollectionViewDataSource {
 // MARK: - UITextFieldDelegate
 extension TrackViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-          textField.resignFirstResponder()
-          return true
-      }
-      
-      func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-          if let text = textField.text, let textRange = Range(range, in: text) {
-              let updatedText = text.replacingCharacters(in: textRange, with: string)
-              searchText = updatedText
-              collectionView.reloadData()
-              updatePlaceholderVisibility()
-          }
-          return true
-      }
+        textField.resignFirstResponder()
+        return true
+    }
+    
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        if let text = textField.text, let textRange = Range(range, in: text) {
+            let updatedText = text.replacingCharacters(in: textRange, with: string)
+            searchText = updatedText
+            collectionView.reloadData()
+            updatePlaceholderVisibility()
+        }
+        return true
+    }
 }
 
 // MARK: - UICollectionViewDelegateFlowLayout

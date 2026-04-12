@@ -44,9 +44,6 @@ final class NewHabitViewController: UIViewController {
     private var selectedSchedule: [Weekday] = []
     private var selectedDaysCount: Int = 0
     
-
-    
-    
     // MARK: - UI Elements
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -297,25 +294,24 @@ final class NewHabitViewController: UIViewController {
         
         // Получаем выбранные значения или значения по умолчанию
         let emoji = selectedEmoji ?? "🙂"
-        let color = selectedColor ?? .ypColorSelection1
+        let uiColor = selectedColor ?? .ypColorSelection1
         
-        // ВАЖНО: Проверьте инициализатор структуры Tracker.
-        // Если параметр 'color' принимает String, вам нужно преобразовать UIColor в строку.
-        // Если параметр 'color' принимает UIColor, передавайте 'color' напрямую.
+        // Преобразуем UIColor в Hex String для сохранения в CoreData
+        let colorHex = uiColor.toHexString()
         
-        // Пример, если нужен String (вам придется добавить логику получения имени цвета, если она есть):
-        // let colorName = ...
-        
-        // Пример, если принимает UIColor:
+        // Создаем трекер
         let tracker = Tracker(
             name: name,
-            color: "ColorSelected", // Здесь должна быть ваша логика сохранения цвета
+            color: colorHex, // Передаем строку (например, "#FF5733")
             emodji: emoji,
             schedule: selectedSchedule
         )
         
+        // Сохраняем через делегат или замыкание
         delegate?.didCreateHabit(tracker, category: category)
         onTrackerCreated?(tracker, category)
+        
+        // Закрываем экран
         presentingViewController?.dismiss(animated: true)
     }
     
@@ -419,6 +415,7 @@ extension NewHabitViewController: UITextFieldDelegate {
         return true
     }
 }
+
 // MARK: - UICollectionViewDataSource
 extension NewHabitViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -487,10 +484,11 @@ extension NewHabitViewController: UICollectionViewDelegate {
             print("Выбран цвет: \(selectedColor ?? .black)")
         }
         
-        // Обновляем коллекцию, чтобы показать/скрыть выделение (если нужно)
+        // Обновляем коллекцию, чтобы показать/скрыть выделение
         collectionView.reloadData()
     }
 }
+
 // MARK: - SwiftUI for working canvas
 import SwiftUI
 struct CreateHabitPreview: PreviewProvider {

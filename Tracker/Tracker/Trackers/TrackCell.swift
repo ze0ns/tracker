@@ -1,3 +1,9 @@
+//
+//  TrackCell.swift
+//  Tracker
+//
+//  Created by Oschepkov Aleksandr on 09.03.2026.
+//
 import UIKit
 
 final class TrackCell: UICollectionViewCell {
@@ -12,6 +18,7 @@ final class TrackCell: UICollectionViewCell {
         cardContainerView.translatesAutoresizingMaskIntoConstraints = false
         return cardContainerView
     }()
+    
     private let emojiContainer: UIView = {
         let view = UIView()
         view.backgroundColor = .ypWhiteOpt30
@@ -19,17 +26,21 @@ final class TrackCell: UICollectionViewCell {
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
-    private let trackEmoji: UIImageView = {
-        let trackEmoji = UIImageView()
-        trackEmoji.image = UIImage(resource: .emoji)
-        trackEmoji.translatesAutoresizingMaskIntoConstraints = false
-        return trackEmoji
+    
+    // ИЗМЕНЕНО: Заменили UIImageView на UILabel для вывода текста эмодзи
+    private let trackEmojiLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 12) // Размер шрифта для эмодзи
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
     }()
 
     private let trackJobs: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 12, weight: .medium)
         label.textColor = .ypWhiteDay
+        label.numberOfLines = 2 // Разрешаем 2 строки для длинных названий
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -60,6 +71,9 @@ final class TrackCell: UICollectionViewCell {
     private var completedDaysCount: Int = 0
     private var trackerID: String?
     var selectedDate: Date?
+    
+    // Храним цвет, чтобы обновлять tint кнопки
+    private var currentColor: UIColor = .ypColorSelection5
 
     var onButtonTapped: (() -> Void)?
     
@@ -81,7 +95,10 @@ final class TrackCell: UICollectionViewCell {
         contentView.addSubview(cardContainerView)
         cardContainerView.addSubview(trackJobs)
         cardContainerView.addSubview(emojiContainer)
-        emojiContainer.addSubview(trackEmoji)
+        
+        // ИЗМЕНЕНО: Добавляем лейбл вместо imageView
+        emojiContainer.addSubview(trackEmojiLabel)
+        
         contentView.addSubview(statusLabel)
         contentView.addSubview(actionButton)
     }
@@ -99,16 +116,15 @@ final class TrackCell: UICollectionViewCell {
             trackJobs.bottomAnchor.constraint(equalTo: cardContainerView.bottomAnchor, constant: -12),
             trackJobs.leadingAnchor.constraint(equalTo: cardContainerView.leadingAnchor, constant: 12),
             
-            // Картинка эмоджи
+            // Контейнер для эмоджи
             emojiContainer.topAnchor.constraint(equalTo: cardContainerView.topAnchor, constant: 12),
             emojiContainer.leadingAnchor.constraint(equalTo: cardContainerView.leadingAnchor, constant: 12),
             emojiContainer.widthAnchor.constraint(equalToConstant: 24),
             emojiContainer.heightAnchor.constraint(equalToConstant: 24),
             
-            trackEmoji.centerXAnchor.constraint(equalTo: emojiContainer.centerXAnchor),
-            trackEmoji.centerYAnchor.constraint(equalTo: emojiContainer.centerYAnchor),
-            trackEmoji.widthAnchor.constraint(equalToConstant: 16),
-            trackEmoji.heightAnchor.constraint(equalToConstant: 16),
+            // ИЗМЕНЕНО: Констрейнты для лейбла эмодзи
+            trackEmojiLabel.centerXAnchor.constraint(equalTo: emojiContainer.centerXAnchor),
+            trackEmojiLabel.centerYAnchor.constraint(equalTo: emojiContainer.centerYAnchor),
             
             // Статус (счетчик дней)
             statusLabel.topAnchor.constraint(equalTo: cardContainerView.bottomAnchor, constant: 16),
@@ -126,27 +142,11 @@ final class TrackCell: UICollectionViewCell {
     // MARK: - Actions
     
     @objc private func buttonTapped() {
-        isCompleted.toggle()
-        updateButtonAppearance()
-        
-        if isCompleted {
-            completedDaysCount += 1
-            updateStatusLabel()
-            if let date = selectedDate {
-                saveRecord(date: date)
-            }
-        } else {
-            if completedDaysCount > 0 {
-                completedDaysCount -= 1
-                updateStatusLabel()
-            }
-        }
-        
         onButtonTapped?()
     }
     
     private func updateButtonAppearance() {
-        let imageName = isCompleted ?  "checkmark" : "plus"
+        let imageName = isCompleted ? "checkmark" : "plus"
         actionButton.setImage(UIImage(named: imageName), for: .normal)
     }
     
@@ -168,44 +168,41 @@ final class TrackCell: UICollectionViewCell {
         statusLabel.text = "\(completedDaysCount) \(suffix)"
     }
     
-    private func saveRecord(date: Date) {
-        guard let id = trackerID else { return }
-        
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd.MM.yyyy"
-        let dateString = formatter.string(from: date)
-        
-        let record = TrackerRecord(trackID: id, trackDate: dateString)
-        print("Запись сохранена: \(record)")
-    }
-    
     // MARK: - Configuration
     
-    func configure(id: String, jobsName: String, daysCount: Int, isDone: Bool, date: Date?) {
+    func configure(id: String, jobsName: String, daysCount: Int, isDone: Bool, date: Date, emoji: String, color: UIColor) {
         self.trackerID = id
         self.trackJobs.text = jobsName
         self.completedDaysCount = daysCount
         self.isCompleted = isDone
         self.selectedDate = date
         
+        // ИЗМЕНЕНО: Устанавливаем текст эмодзи
+        self.trackEmojiLabel.text = emoji
+        
+        // Устанавливаем цвет карточки
+        self.cardContainerView.backgroundColor = color
+        
+        // Запоминаем цвет для кнопки
+        self.currentColor = color
+        
+        // Обновляем цвет иконки кнопки
+        actionButton.tintColor = color
+        
         // --- ЛОГИКА ПРОВЕРКИ ДАТЫ ---
         if let selectedDate = selectedDate {
             let calendar = Calendar.current
             
-            // Сравниваем только год, месяц и день
             let comparison = calendar.compare(selectedDate, to: Date(), toGranularity: .day)
             
-            // .orderedDescending означает, что выбранная дата позже текущей (будущее)
             if comparison == .orderedDescending {
                 actionButton.isUserInteractionEnabled = false
-                actionButton.alpha = 0.5 // Визуально делаем кнопку неактивной (полупрозрачной)
+                actionButton.alpha = 0.5
             } else {
-                // Дата сегодня или в прошлом - кнопка активна
                 actionButton.isUserInteractionEnabled = true
                 actionButton.alpha = 1.0
             }
         } else {
-            // Если дата не передана, по умолчанию активна
             actionButton.isUserInteractionEnabled = true
             actionButton.alpha = 1.0
         }
