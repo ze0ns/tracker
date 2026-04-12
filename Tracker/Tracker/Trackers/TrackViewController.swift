@@ -8,11 +8,20 @@ protocol TrackViewControllerDelegate: AnyObject {
     func didTrackers(_ trackers: [Tracker])
 }
 
-class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
+// MARK: - Filter Enum
+enum TrackerFilter {
+    case all
+    case today
+    case completed
+    case uncompleted
+}
+
+class TrackViewController: UIViewController, NewHabitViewControllerDelegate, FiltersViewControllerDelegate {
     
     // MARK: - Properties
     private let trackerStore = TrackerStore()
     private var searchText: String = ""
+    private var currentFilter: TrackerFilter = .all
     
     // MARK: - UI Elements
     
@@ -32,6 +41,19 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         nameFunction.font = .systemFont(ofSize: 34, weight: .bold)
         nameFunction.translatesAutoresizingMaskIntoConstraints = false
         return nameFunction
+    }()
+    
+    // MARK: - Filter Button
+    private lazy var filterButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Фильтры", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .regular)
+        button.setTitleColor(.ypWhiteDay, for: .normal)
+        button.backgroundColor = .systemBlue
+        button.layer.cornerRadius = 16
+        button.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
     }()
     
     // MARK: - Search Container
@@ -109,33 +131,46 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     
     private var visibleCategories: [TrackerCategory] {
         let calendar = Calendar.current
-        let calendarWeekday = calendar.component(.weekday, from: datePicker.date)
-        let requiredWeekdayIndex = (calendarWeekday + 5) % 7 + 1
         
-        guard let requiredDay = Weekday(rawValue: requiredWeekdayIndex) else {
-            return []
+        let filterDate: Date
+        if currentFilter == .today {
+            filterDate = Date()
+        } else {
+            filterDate = datePicker.date
         }
-
+        
+        let calendarWeekday = calendar.component(.weekday, from: filterDate)
+        let requiredWeekdayIndex = (calendarWeekday + 5) % 7 + 1
+        guard let requiredDay = Weekday(rawValue: requiredWeekdayIndex) else { return [] }
+        
+        dateFormatter.dateFormat = "dd.MM.yyyy"
+        let dateString = dateFormatter.string(from: filterDate)
+        
         return trackerStore.categories.compactMap { category in
             let trackersForDay = category.arrayTracker.filter { tracker in
                 return tracker.schedule.contains(requiredDay)
             }
             
-            let filteredTrackers: [Tracker]
-            if searchText.isEmpty {
-                filteredTrackers = trackersForDay
-            } else {
-                filteredTrackers = trackersForDay.filter { tracker in
-                    return tracker.name.lowercased().contains(searchText.lowercased())
-                }
+            var filtered = trackersForDay
+            if !searchText.isEmpty {
+                filtered = filtered.filter { $0.name.lowercased().contains(searchText.lowercased()) }
             }
             
-            // Сортировка: закрепленные (если есть isPinned) будут вверху
-            // Для работы раскомментируйте строку ниже и добавьте свойство isPinned в Tracker
-            // let sorted = filteredTrackers.sorted { $0.isPinned && !$1.isPinned }
+            switch currentFilter {
+            case .completed:
+                filtered = filtered.filter { tracker in
+                    trackerStore.completedTrackers.contains { $0.trackID == tracker.id.uuidString && $0.trackDate == dateString }
+                }
+            case .uncompleted:
+                filtered = filtered.filter { tracker in
+                    !trackerStore.completedTrackers.contains { $0.trackID == tracker.id.uuidString && $0.trackDate == dateString }
+                }
+            case .all, .today:
+                break
+            }
             
-            if !filteredTrackers.isEmpty {
-                return TrackerCategory(nameTrackerCategory: category.nameTrackerCategory, arrayTracker: filteredTrackers)
+            if !filtered.isEmpty {
+                return TrackerCategory(nameTrackerCategory: category.nameTrackerCategory, arrayTracker: filtered)
             } else {
                 return nil
             }
@@ -171,6 +206,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
         view.addSubview(addTrack)
         view.addSubview(dymmy)
         view.addSubview(dymmyLabel)
+        view.addSubview(filterButton)
         
         collectionView.translatesAutoresizingMaskIntoConstraints = false
     }
@@ -217,9 +253,14 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
             searchTextField.trailingAnchor.constraint(equalTo: searchContainerView.trailingAnchor),
             
             collectionView.topAnchor.constraint(equalTo: searchContainerView.bottomAnchor, constant: 10),
-            collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            collectionView.bottomAnchor.constraint(equalTo: filterButton.topAnchor, constant: -16),
+            
+            filterButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            filterButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -56),
+            filterButton.widthAnchor.constraint(equalToConstant: 200),
+            filterButton.heightAnchor.constraint(equalToConstant: 50),
             
             dymmy.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor),
             dymmy.centerYAnchor.constraint(equalTo: collectionView.centerYAnchor),
@@ -237,7 +278,24 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     }
     
     // MARK: - Actions
+    
     @objc func dateChanged() {
+        collectionView.reloadData()
+        updatePlaceholderVisibility()
+    }
+    
+    @objc func filterButtonTapped() {
+        let filtersVC = FiltersViewController(selectedFilter: currentFilter)
+        filtersVC.delegate = self
+        present(filtersVC, animated: true)
+    }
+    
+    // MARK: - FiltersViewControllerDelegate
+    func didSelectFilter(_ filter: TrackerFilter) {
+        currentFilter = filter
+        if filter == .today {
+            datePicker.date = Date()
+        }
         collectionView.reloadData()
         updatePlaceholderVisibility()
     }
@@ -292,7 +350,6 @@ extension TrackViewController: UICollectionViewDataSource {
         
         let daysCount = trackerStore.completedTrackers.filter { $0.trackID == tracker.id.uuidString }.count
         
-        // Конфигурация ячейки
         cell.configure(
             id: tracker.id.uuidString,
             jobsName: tracker.name,
@@ -303,32 +360,26 @@ extension TrackViewController: UICollectionViewDataSource {
             color: color
         )
         
-        // Логика нажатия на кнопку "+"
         cell.onButtonTapped = { [weak self] in
             guard let self = self else { return }
             self.trackerStore.toggleTrackerRecord(trackerId: tracker.id.uuidString, date: currentDate)
             self.collectionView.reloadItems(at: [indexPath])
         }
         
-        // ИЗМЕНЕНО: Передаем логику создания меню в ячейку для корректного превью и размытия
         cell.contextMenuProvider = { [weak self] in
             guard let self = self else { return nil }
             
-            // Проверка закрепления (используем заглушку или реальное свойство, если есть)
-            // let isPinned = tracker.isPinned
-            let isPinned = false
+            let isPinned = tracker.isPinned
             
             let pinTitle = isPinned ? "Открепить" : "Закрепить"
             let pinImage = isPinned ? UIImage(systemName: "pin.slash") : UIImage(systemName: "pin")
             
             let pinAction = UIAction(title: pinTitle, image: pinImage) { _ in
                 print("Нажато: \(pinTitle) для \(tracker.name)")
-                // self.trackerStore.togglePin(for: tracker.id)
             }
             
             let editAction = UIAction(title: "Редактировать", image: UIImage(systemName: "pencil")) { _ in
                 print("Нажато: Редактировать \(tracker.name)")
-                // TODO: Переход на экран редактирования
             }
             
             let deleteAction = UIAction(title: "Удалить", image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
