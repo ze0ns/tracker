@@ -304,7 +304,8 @@ final class NewHabitViewController: UIViewController {
             name: name,
             color: colorHex, // Передаем строку (например, "#FF5733")
             emodji: emoji,
-            schedule: selectedSchedule
+            schedule: selectedSchedule,
+            isPinned: false
         )
         
         // Сохраняем через делегат или замыкание

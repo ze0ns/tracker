@@ -277,8 +277,6 @@ extension TrackViewController: UICollectionViewDataSource {
         let tracker = visibleCategories[indexPath.section].arrayTracker[indexPath.row]
         let currentDate = datePicker.date
         
-        // Преобразуем строку цвета из CoreData в UIColor
-        // Используем расширение, которое мы добавили ранее (оно должно быть в проекте)
         let color = UIColor(hex: tracker.color) ?? .ypColorSelection1
         
         dateFormatter.dateFormat = "dd.MM.yyyy"
@@ -359,5 +357,77 @@ extension TrackViewController: UICollectionViewDelegateFlowLayout {
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
         return 9
+    }
+}
+// MARK: - UICollectionViewDelegate (Context Menu)
+extension TrackViewController {
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        
+        // Получаем трекер, на который нажали
+        let tracker = visibleCategories[indexPath.section].arrayTracker[indexPath.row]
+        
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { suggestedActions in
+            
+            // 1. Действие "Закрепить" / "Открепить"
+            // Примечание: Для работы этого функционала в модели Tracker должно быть свойство isPinned: Bool
+            // let isPinned = tracker.isPinned
+            let isPinned = false // Временная заглушка, пока у Tracker нет свойства isPinned
+            
+            let pinTitle = isPinned ? "Открепить" : "Закрепить"
+            let pinImage = isPinned ? UIImage(systemName: "pin.slash") : UIImage(systemName: "pin")
+            
+            let pinAction = UIAction(title: pinTitle, image: pinImage) { _ in
+                // TODO: Реализовать логику закрепления в TrackerStore
+                // self.trackerStore.togglePin(for: tracker.id)
+                // self.collectionView.reloadData()
+                print("Нажато: \(pinTitle) для \(tracker.name)")
+            }
+            
+            // 2. Действие "Редактировать"
+            let editAction = UIAction(title: "Редактировать", image: UIImage(systemName: "pencil")) { _ in
+                // TODO: Открыть экран редактирования, передав текущий tracker
+                // Нужно создать метод инициализации NewHabitViewController с существующим трекером
+                print("Нажато: Редактировать \(tracker.name)")
+            }
+            
+            // 3. Действие "Удалить"
+            let deleteAction = UIAction(title: "Удалить", image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
+                self.deleteTracker(tracker, at: indexPath)
+            }
+            
+            // Собираем меню
+            return UIMenu(title: "", children: [pinAction, editAction, deleteAction])
+        }
+    }
+    
+    // MARK: - Private Helper Methods
+    
+    private func deleteTracker(_ tracker: Tracker, at indexPath: IndexPath) {
+        // Создаем контроллер оповещения
+        let alert = UIAlertController(
+            title: "Удалить трекер?",
+            message: "Вы уверены, что хотите удалить трекер «\(tracker.name)»? Это действие нельзя отменить.",
+            preferredStyle: .alert
+        )
+        
+        // Кнопка "Удалить"
+        let deleteAction = UIAlertAction(title: "Удалить", style: .destructive) { _ in
+            // Удаляем из хранилища
+            self.trackerStore.deleteTracker(tracker)
+            
+            // Обновляем коллекцию
+            self.trackerStore.loadData()
+            self.collectionView.reloadData()
+            self.updatePlaceholderVisibility()
+        }
+        
+        // Кнопка "Отмена"
+        let cancelAction = UIAlertAction(title: "Отменить", style: .cancel)
+        
+        alert.addAction(deleteAction)
+        alert.addAction(cancelAction)
+        
+        // Показываем алерт
+        self.present(alert, animated: true)
     }
 }

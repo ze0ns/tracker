@@ -137,8 +137,40 @@ final class TrackerStore {
         loadData()
     }
 
+    // MARK: - Delete Tracker
+    func deleteTracker(_ tracker: Tracker) {
+        let fetchRequest: NSFetchRequest<TrackerCD> = TrackerCD.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "id == %@", tracker.id.uuidString)
+        
+        do {
+            let results = try context.fetch(fetchRequest)
+            
+            if let trackerToDelete = results.first {
+                // 1. Удаляем все записи о выполнении, связанные с этим трекером
+                let recordsRequest: NSFetchRequest<TrackerRecordCD> = TrackerRecordCD.fetchRequest()
+                recordsRequest.predicate = NSPredicate(format: "trackID == %@", tracker.id.uuidString)
+                
+                let recordsToDelete = try context.fetch(recordsRequest)
+                for record in recordsToDelete {
+                    context.delete(record)
+                }
+                
+                // 2. Удаляем сам трекер
+                context.delete(trackerToDelete)
+                
+                // 3. Сохраняем контекст
+                saveContext()
+                loadData()
+                
+                print("🗑 Трекер '\(tracker.name)' и его записи успешно удалены")
+            } else {
+                print("⚠️ Трекер с id \(tracker.id) не найден в базе данных")
+            }
+        } catch {
+            print("❌ Ошибка удаления трекера: \(error)")
+        }
+    }
  
-    
     /// Переключает статус выполнения трекера
     func toggleTrackerRecord(trackerId: String, date: Date) {
         let calendar = Calendar.current
@@ -205,6 +237,7 @@ final class TrackerStore {
         
         // Восстанавливаем расписание
         var schedule: [Weekday] = []
+       
         
         if let data = object.schedule {
             do {
@@ -220,7 +253,8 @@ final class TrackerStore {
             name: name,
             color: object.color ?? "",
             emodji: object.emodji ?? "",
-            schedule: schedule
+            schedule: schedule,
+            isPinned: object.isPinned
         )
     }
     

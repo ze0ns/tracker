@@ -12,13 +12,15 @@ struct Tracker {
     let color: String
     let emodji: String
     let schedule: [Weekday]
+    var isPinned: Bool
     
     // Добавляем явный инициализатор со значением по умолчанию для id
-    init(id: UUID = UUID(), name: String, color: String, emodji: String, schedule: [Weekday]) {
+    init(id: UUID = UUID(), name: String, color: String, emodji: String, schedule: [Weekday], isPinned: Bool) {
         self.id = id
         self.name = name
         self.color = color
         self.emodji = emodji
         self.schedule = schedule
+        self.isPinned = isPinned
     }
 }

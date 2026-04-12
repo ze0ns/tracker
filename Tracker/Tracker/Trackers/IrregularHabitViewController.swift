@@ -303,7 +303,8 @@ final class IrregularHabitViewController: UIViewController {
             name: name,
             color: "ColorSelected", // Здесь должна быть ваша логика сохранения цвета
             emodji: emoji,
-            schedule: selectedSchedule
+            schedule: selectedSchedule,
+            isPinned: false
         )
         
         delegate?.didCreateHabit(tracker, category: category)
