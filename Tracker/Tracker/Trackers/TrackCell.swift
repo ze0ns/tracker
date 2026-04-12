@@ -27,10 +27,9 @@ final class TrackCell: UICollectionViewCell {
         return view
     }()
     
-    // ИЗМЕНЕНО: Заменили UIImageView на UILabel для вывода текста эмодзи
     private let trackEmojiLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 12) // Размер шрифта для эмодзи
+        label.font = .systemFont(ofSize: 12)
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -40,7 +39,7 @@ final class TrackCell: UICollectionViewCell {
         let label = UILabel()
         label.font = .systemFont(ofSize: 12, weight: .medium)
         label.textColor = .ypWhiteDay
-        label.numberOfLines = 2 // Разрешаем 2 строки для длинных названий
+        label.numberOfLines = 2
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -71,11 +70,10 @@ final class TrackCell: UICollectionViewCell {
     private var completedDaysCount: Int = 0
     private var trackerID: String?
     var selectedDate: Date?
-    
-    // Храним цвет, чтобы обновлять tint кнопки
     private var currentColor: UIColor = .ypColorSelection5
 
     var onButtonTapped: (() -> Void)?
+    var contextMenuProvider: (() -> UIMenu?)?
     
     // MARK: - Init
     
@@ -83,6 +81,7 @@ final class TrackCell: UICollectionViewCell {
         super.init(frame: frame)
         setupViews()
         setupConstraints()
+        setupContextMenu()
     }
     
     required init?(coder: NSCoder) {
@@ -95,8 +94,6 @@ final class TrackCell: UICollectionViewCell {
         contentView.addSubview(cardContainerView)
         cardContainerView.addSubview(trackJobs)
         cardContainerView.addSubview(emojiContainer)
-        
-        // ИЗМЕНЕНО: Добавляем лейбл вместо imageView
         emojiContainer.addSubview(trackEmojiLabel)
         
         contentView.addSubview(statusLabel)
@@ -105,38 +102,39 @@ final class TrackCell: UICollectionViewCell {
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            // Контейнер
             cardContainerView.topAnchor.constraint(equalTo: contentView.topAnchor),
             cardContainerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             cardContainerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             cardContainerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -60),
             
-            // Задание трекера
             trackJobs.trailingAnchor.constraint(equalTo: cardContainerView.trailingAnchor, constant: -12),
             trackJobs.bottomAnchor.constraint(equalTo: cardContainerView.bottomAnchor, constant: -12),
             trackJobs.leadingAnchor.constraint(equalTo: cardContainerView.leadingAnchor, constant: 12),
             
-            // Контейнер для эмоджи
             emojiContainer.topAnchor.constraint(equalTo: cardContainerView.topAnchor, constant: 12),
             emojiContainer.leadingAnchor.constraint(equalTo: cardContainerView.leadingAnchor, constant: 12),
             emojiContainer.widthAnchor.constraint(equalToConstant: 24),
             emojiContainer.heightAnchor.constraint(equalToConstant: 24),
             
-            // ИЗМЕНЕНО: Констрейнты для лейбла эмодзи
             trackEmojiLabel.centerXAnchor.constraint(equalTo: emojiContainer.centerXAnchor),
             trackEmojiLabel.centerYAnchor.constraint(equalTo: emojiContainer.centerYAnchor),
             
-            // Статус (счетчик дней)
             statusLabel.topAnchor.constraint(equalTo: cardContainerView.bottomAnchor, constant: 16),
             statusLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12),
             statusLabel.centerYAnchor.constraint(equalTo: actionButton.centerYAnchor),
             
-            // Кнопка
             actionButton.topAnchor.constraint(equalTo: cardContainerView.bottomAnchor, constant: 8),
             actionButton.trailingAnchor.constraint(equalTo: cardContainerView.trailingAnchor, constant: -12),
             actionButton.widthAnchor.constraint(equalToConstant: 34),
             actionButton.heightAnchor.constraint(equalToConstant: 34),
         ])
+    }
+    
+    // MARK: - Context Menu Setup
+    
+    private func setupContextMenu() {
+        let interaction = UIContextMenuInteraction(delegate: self)
+        cardContainerView.addInteraction(interaction)
     }
     
     // MARK: - Actions
@@ -146,7 +144,7 @@ final class TrackCell: UICollectionViewCell {
     }
     
     private func updateButtonAppearance() {
-        let imageName = isCompleted ? "checkmark" : "plus"
+        let imageName = isCompleted ?  "checkmark" : "plus"
         actionButton.setImage(UIImage(named: imageName), for: .normal)
     }
     
@@ -177,22 +175,13 @@ final class TrackCell: UICollectionViewCell {
         self.isCompleted = isDone
         self.selectedDate = date
         
-        // ИЗМЕНЕНО: Устанавливаем текст эмодзи
         self.trackEmojiLabel.text = emoji
-        
-        // Устанавливаем цвет карточки
         self.cardContainerView.backgroundColor = color
-        
-        // Запоминаем цвет для кнопки
         self.currentColor = color
-        
-        // Обновляем цвет иконки кнопки
         actionButton.tintColor = color
         
-        // --- ЛОГИКА ПРОВЕРКИ ДАТЫ ---
         if let selectedDate = selectedDate {
             let calendar = Calendar.current
-            
             let comparison = calendar.compare(selectedDate, to: Date(), toGranularity: .day)
             
             if comparison == .orderedDescending {
@@ -206,9 +195,26 @@ final class TrackCell: UICollectionViewCell {
             actionButton.isUserInteractionEnabled = true
             actionButton.alpha = 1.0
         }
-        // -----------------------------
         
         updateStatusLabel()
         updateButtonAppearance()
+    }
+}
+
+// MARK: - UIContextMenuInteractionDelegate
+extension TrackCell: UIContextMenuInteractionDelegate {
+    
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] suggestedActions in
+            return self?.contextMenuProvider?() ?? UIMenu(title: "", children: [])
+        }
+    }
+    
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForHighlightingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        return nil
+    }
+    
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        return nil
     }
 }

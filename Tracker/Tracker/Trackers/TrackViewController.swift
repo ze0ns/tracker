@@ -130,6 +130,10 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
                 }
             }
             
+            // Сортировка: закрепленные (если есть isPinned) будут вверху
+            // Для работы раскомментируйте строку ниже и добавьте свойство isPinned в Tracker
+            // let sorted = filteredTrackers.sorted { $0.isPinned && !$1.isPinned }
+            
             if !filteredTrackers.isEmpty {
                 return TrackerCategory(nameTrackerCategory: category.nameTrackerCategory, arrayTracker: filteredTrackers)
             } else {
@@ -288,7 +292,7 @@ extension TrackViewController: UICollectionViewDataSource {
         
         let daysCount = trackerStore.completedTrackers.filter { $0.trackID == tracker.id.uuidString }.count
         
-        // Передаем emoji и color в ячейку
+        // Конфигурация ячейки
         cell.configure(
             id: tracker.id.uuidString,
             jobsName: tracker.name,
@@ -299,10 +303,39 @@ extension TrackViewController: UICollectionViewDataSource {
             color: color
         )
         
+        // Логика нажатия на кнопку "+"
         cell.onButtonTapped = { [weak self] in
             guard let self = self else { return }
             self.trackerStore.toggleTrackerRecord(trackerId: tracker.id.uuidString, date: currentDate)
             self.collectionView.reloadItems(at: [indexPath])
+        }
+        
+        // ИЗМЕНЕНО: Передаем логику создания меню в ячейку для корректного превью и размытия
+        cell.contextMenuProvider = { [weak self] in
+            guard let self = self else { return nil }
+            
+            // Проверка закрепления (используем заглушку или реальное свойство, если есть)
+            // let isPinned = tracker.isPinned
+            let isPinned = false
+            
+            let pinTitle = isPinned ? "Открепить" : "Закрепить"
+            let pinImage = isPinned ? UIImage(systemName: "pin.slash") : UIImage(systemName: "pin")
+            
+            let pinAction = UIAction(title: pinTitle, image: pinImage) { _ in
+                print("Нажато: \(pinTitle) для \(tracker.name)")
+                // self.trackerStore.togglePin(for: tracker.id)
+            }
+            
+            let editAction = UIAction(title: "Редактировать", image: UIImage(systemName: "pencil")) { _ in
+                print("Нажато: Редактировать \(tracker.name)")
+                // TODO: Переход на экран редактирования
+            }
+            
+            let deleteAction = UIAction(title: "Удалить", image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
+                self.deleteTracker(tracker, at: indexPath)
+            }
+            
+            return UIMenu(title: "", children: [pinAction, editAction, deleteAction])
         }
         
         return cell
@@ -359,75 +392,28 @@ extension TrackViewController: UICollectionViewDelegateFlowLayout {
         return 9
     }
 }
-// MARK: - UICollectionViewDelegate (Context Menu)
+
+// MARK: - Private Helper Methods
 extension TrackViewController {
-    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        
-        // Получаем трекер, на который нажали
-        let tracker = visibleCategories[indexPath.section].arrayTracker[indexPath.row]
-        
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { suggestedActions in
-            
-            // 1. Действие "Закрепить" / "Открепить"
-            // Примечание: Для работы этого функционала в модели Tracker должно быть свойство isPinned: Bool
-            // let isPinned = tracker.isPinned
-            let isPinned = false // Временная заглушка, пока у Tracker нет свойства isPinned
-            
-            let pinTitle = isPinned ? "Открепить" : "Закрепить"
-            let pinImage = isPinned ? UIImage(systemName: "pin.slash") : UIImage(systemName: "pin")
-            
-            let pinAction = UIAction(title: pinTitle, image: pinImage) { _ in
-                // TODO: Реализовать логику закрепления в TrackerStore
-                // self.trackerStore.togglePin(for: tracker.id)
-                // self.collectionView.reloadData()
-                print("Нажато: \(pinTitle) для \(tracker.name)")
-            }
-            
-            // 2. Действие "Редактировать"
-            let editAction = UIAction(title: "Редактировать", image: UIImage(systemName: "pencil")) { _ in
-                // TODO: Открыть экран редактирования, передав текущий tracker
-                // Нужно создать метод инициализации NewHabitViewController с существующим трекером
-                print("Нажато: Редактировать \(tracker.name)")
-            }
-            
-            // 3. Действие "Удалить"
-            let deleteAction = UIAction(title: "Удалить", image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
-                self.deleteTracker(tracker, at: indexPath)
-            }
-            
-            // Собираем меню
-            return UIMenu(title: "", children: [pinAction, editAction, deleteAction])
-        }
-    }
-    
-    // MARK: - Private Helper Methods
-    
     private func deleteTracker(_ tracker: Tracker, at indexPath: IndexPath) {
-        // Создаем контроллер оповещения
         let alert = UIAlertController(
             title: "Удалить трекер?",
             message: "Вы уверены, что хотите удалить трекер «\(tracker.name)»? Это действие нельзя отменить.",
             preferredStyle: .alert
         )
         
-        // Кнопка "Удалить"
         let deleteAction = UIAlertAction(title: "Удалить", style: .destructive) { _ in
-            // Удаляем из хранилища
             self.trackerStore.deleteTracker(tracker)
-            
-            // Обновляем коллекцию
             self.trackerStore.loadData()
             self.collectionView.reloadData()
             self.updatePlaceholderVisibility()
         }
         
-        // Кнопка "Отмена"
         let cancelAction = UIAlertAction(title: "Отменить", style: .cancel)
         
         alert.addAction(deleteAction)
         alert.addAction(cancelAction)
         
-        // Показываем алерт
         self.present(alert, animated: true)
     }
 }
