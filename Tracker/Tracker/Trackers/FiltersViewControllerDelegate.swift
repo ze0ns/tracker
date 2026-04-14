@@ -16,11 +16,11 @@ final class FiltersViewController: UIViewController {
     
     // MARK: - Properties
     private var selectedFilter: TrackerFilter
-    private let filters: [(type: TrackerFilter, title: String)] = [
-        (.all, "Все трекеры"),
-        (.today, "Трекеры на сегодня"),
-        (.completed, "Завершенные"),
-        (.uncompleted, "Незавершенные")
+    private let filters: [(type: TrackerFilter, title: String, visible: Bool)] = [
+        (.all, "Все трекеры", false),
+        (.today, "Трекеры на сегодня", false),
+        (.completed, "Завершенные", true),
+        (.uncompleted, "Незавершенные", true)
     ]
     
     weak var delegate: FiltersViewControllerDelegate?
@@ -109,8 +109,8 @@ extension FiltersViewController: UITableViewDataSource {
         cell.backgroundColor = .ypBackgroundDay
         cell.selectionStyle = .none
         
-        // Отображение галочки
-        if filterItem.type == selectedFilter {
+        
+        if (filterItem.type == selectedFilter) && filterItem.visible {
             cell.accessoryType = .checkmark
             cell.tintColor = .ypBlue
         } else {

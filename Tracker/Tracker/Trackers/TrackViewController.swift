@@ -1,6 +1,9 @@
 //
 //  TrackViewController.swift
 //
+//
+//  Created by Oschepkov Aleksandr on 09.03.2026.
+//
 
 import UIKit
 
@@ -65,7 +68,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         view.clipsToBounds = true
         return view
     }()
-
+    
     private lazy var searchTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "Поиск"
@@ -74,14 +77,14 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         let searchIcon = UIImageView(image: UIImage(systemName: "magnifyingglass"))
         searchIcon.tintColor = .ypGray
         searchIcon.contentMode = .center
-
+        
         let iconContainerView = UIView(frame: CGRect(x: 0, y: 0, width: 40, height: 20))
         searchIcon.frame = CGRect(x: 10, y: 0, width: 20, height: 20)
         iconContainerView.addSubview(searchIcon)
         
         textField.leftView = iconContainerView
         textField.leftViewMode = .always
-
+        
         textField.textColor = .ypBlackDay
         textField.font = .systemFont(ofSize: 17)
         textField.delegate = self
@@ -129,15 +132,29 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     
     // MARK: - Computed Properties
     
+    private var hasTrackersForSelectedDate: Bool {
+        let calendar = Calendar.current
+        let filterDate = datePicker.date
+        
+        let calendarWeekday = calendar.component(.weekday, from: filterDate)
+        let requiredWeekdayIndex = (calendarWeekday + 5) % 7 + 1
+        guard let requiredDay = Weekday(rawValue: requiredWeekdayIndex) else { return false }
+        
+        for category in trackerStore.categories {
+            let trackersForDay = category.arrayTracker.filter { tracker in
+                return tracker.schedule.contains(requiredDay)
+            }
+            if !trackersForDay.isEmpty {
+                return true
+            }
+        }
+        return false
+    }
+    
     private var visibleCategories: [TrackerCategory] {
         let calendar = Calendar.current
         
-        let filterDate: Date
-        if currentFilter == .today {
-            filterDate = Date()
-        } else {
-            filterDate = datePicker.date
-        }
+        let filterDate = datePicker.date
         
         let calendarWeekday = calendar.component(.weekday, from: filterDate)
         let requiredWeekdayIndex = (calendarWeekday + 5) % 7 + 1
@@ -272,14 +289,38 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         ])
     }
     
+    // MARK: - ИСПРАВЛЕННАЯ ЛОГИКА PLACEHOLDER'а
     private func updatePlaceholderVisibility() {
-        dymmy.isHidden = !visibleCategories.isEmpty
-        dymmyLabel.isHidden = !visibleCategories.isEmpty
+        let isHidden = !visibleCategories.isEmpty
+        
+        dymmy.isHidden = isHidden
+        dymmyLabel.isHidden = isHidden
+        
+        // Логика изменения текста:
+        // Если трекеры на этот день ЕСТЬ в базе, но visibleCategories пустой,
+        // значит фильтр (или поиск) скрыл все результаты.
+        if hasTrackersForSelectedDate && visibleCategories.isEmpty {
+            dymmyLabel.text = "Ничего не найдено"
+        } else {
+            dymmyLabel.text = "Что будем отслеживать?"
+        }
+        
+        // Скрываем кнопку фильтров, если на выбранную дату нет трекеров в базе
+        filterButton.isHidden = !hasTrackersForSelectedDate
     }
     
     // MARK: - Actions
     
     @objc func dateChanged() {
+        let calendar = Calendar.current
+        let isToday = calendar.isDateInToday(datePicker.date)
+        
+        if isToday && currentFilter == .today {
+            // Оставляем фильтр "Сегодня", если выбрали сегодняшний день
+        } else {
+            currentFilter = .all
+        }
+        
         collectionView.reloadData()
         updatePlaceholderVisibility()
     }
@@ -293,9 +334,11 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     // MARK: - FiltersViewControllerDelegate
     func didSelectFilter(_ filter: TrackerFilter) {
         currentFilter = filter
+        
         if filter == .today {
             datePicker.date = Date()
         }
+        
         collectionView.reloadData()
         updatePlaceholderVisibility()
     }
@@ -363,7 +406,13 @@ extension TrackViewController: UICollectionViewDataSource {
         cell.onButtonTapped = { [weak self] in
             guard let self = self else { return }
             self.trackerStore.toggleTrackerRecord(trackerId: tracker.id.uuidString, date: currentDate)
-            self.collectionView.reloadItems(at: [indexPath])
+            
+            switch self.currentFilter {
+            case .completed, .uncompleted:
+                self.collectionView.reloadData()
+            default:
+                self.collectionView.reloadItems(at: [indexPath])
+            }
         }
         
         cell.contextMenuProvider = { [weak self] in
