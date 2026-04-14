@@ -214,6 +214,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     
     // MARK: - Setup
     private func setupViews() {
+       
         view.backgroundColor = .ypWhiteDay
         view.addSubview(datePicker)
         view.addSubview(nameFunction)
