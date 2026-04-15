@@ -21,7 +21,7 @@ final class MainTabBarController: UITabBarController {
         tabBar.isHidden = true
         let tabItems = createTabItems()
         let tabBar = CustomTabBar(items: tabItems)
-        tabBar.backgroundColor = .ypWhiteDay
+        tabBar.backgroundColor = .whiteDay
         tabBar.height = customTabBarHeight
         tabBar.translatesAutoresizingMaskIntoConstraints = false
         tabBar.onItemSelected = { [weak self] index in
@@ -34,7 +34,7 @@ final class MainTabBarController: UITabBarController {
         
         // MARK: - Добавление границы (линии сверху)
         let topBorderView = UIView()
-        topBorderView.backgroundColor = .lightGray
+        topBorderView.backgroundColor = .lineColor
         topBorderView.translatesAutoresizingMaskIntoConstraints = false
         tabBar.addSubview(topBorderView)
         

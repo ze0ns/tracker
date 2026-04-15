@@ -30,7 +30,10 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     
     private lazy var addTrack: UIButton = {
         let addTrack = UIButton()
-        addTrack.setImage(UIImage(resource: .addTracker), for: .normal)
+        let configuration = UIImage.SymbolConfiguration(pointSize: 26, weight: .medium) // или .heavy, .black
+        let image = UIImage(systemName: "plus", withConfiguration: configuration)
+        addTrack.setImage(image, for: .normal)
+        addTrack.tintColor = .blackDay
         addTrack.contentMode = .scaleAspectFit
         addTrack.accessibilityIdentifier = "addTracker"
         addTrack.addTarget(self, action: #selector(tapAddTrack), for: .touchUpInside)
@@ -42,6 +45,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         let nameFunction = UILabel()
         nameFunction.text = "Трекеры"
         nameFunction.font = .systemFont(ofSize: 34, weight: .bold)
+        nameFunction.textColor = .blackDay // Динамический цвет текста: Черный для Light, Белый для Dark
         nameFunction.translatesAutoresizingMaskIntoConstraints = false
         return nameFunction
     }()
@@ -52,7 +56,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         button.setTitle("Фильтры", for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 17, weight: .regular)
         button.setTitleColor(.ypWhiteDay, for: .normal)
-        button.backgroundColor = .systemBlue
+        button.backgroundColor = .ypBlue
         button.layer.cornerRadius = 16
         button.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -110,6 +114,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         let dymmyLabel = UILabel()
         dymmyLabel.text = "Что будем отслеживать?"
         dymmyLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        dymmyLabel.textColor = .blackDay
         dymmyLabel.translatesAutoresizingMaskIntoConstraints = false
         return dymmyLabel
     }()
@@ -214,8 +219,8 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     
     // MARK: - Setup
     private func setupViews() {
-       
-        view.backgroundColor = .ypWhiteDay
+        // Динамический цвет фона: Белый в Light, Черный в Dark
+        view.backgroundColor = .whiteDay
         view.addSubview(datePicker)
         view.addSubview(nameFunction)
         view.addSubview(searchContainerView)
@@ -232,7 +237,8 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     private func configureAppearance() {
         datePicker.addTarget(self, action: #selector(dateChanged), for: .valueChanged)
         
-        collectionView.backgroundColor = .white
+        // Используем системный фон для коллекции
+        collectionView.backgroundColor = .whiteDay
         collectionView.register(TrackerHeader.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: TrackerHeader.identifier)
         collectionView.register(TrackCell.self, forCellWithReuseIdentifier: TrackCell.identifier)
         collectionView.dataSource = self
@@ -297,16 +303,12 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         dymmy.isHidden = isHidden
         dymmyLabel.isHidden = isHidden
         
-        // Логика изменения текста:
-        // Если трекеры на этот день ЕСТЬ в базе, но visibleCategories пустой,
-        // значит фильтр (или поиск) скрыл все результаты.
         if hasTrackersForSelectedDate && visibleCategories.isEmpty {
             dymmyLabel.text = "Ничего не найдено"
         } else {
             dymmyLabel.text = "Что будем отслеживать?"
         }
         
-        // Скрываем кнопку фильтров, если на выбранную дату нет трекеров в базе
         filterButton.isHidden = !hasTrackersForSelectedDate
     }
     
@@ -317,7 +319,6 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         let isToday = calendar.isDateInToday(datePicker.date)
         
         if isToday && currentFilter == .today {
-            // Оставляем фильтр "Сегодня", если выбрали сегодняшний день
         } else {
             currentFilter = .all
         }
@@ -518,3 +519,4 @@ extension TrackViewController {
         self.present(alert, animated: true)
     }
 }
+

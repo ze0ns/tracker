@@ -47,7 +47,7 @@ final class TrackCell: UICollectionViewCell {
     private let statusLabel: UILabel = {
         let statusLabel = UILabel()
         statusLabel.font = .systemFont(ofSize: 12, weight: .medium)
-        statusLabel.textColor = .black
+        statusLabel.textColor = .blackDay
         statusLabel.translatesAutoresizingMaskIntoConstraints = false
         return statusLabel
     }()
@@ -55,9 +55,8 @@ final class TrackCell: UICollectionViewCell {
 
     private lazy var actionButton: UIButton = {
         let actionButton = UIButton(type: .system)
-        actionButton.backgroundColor = .ypWhiteDay
+        actionButton.backgroundColor = .whiteDay
         actionButton.setImage(UIImage(named: "plus"), for: .normal)
-        actionButton.tintColor = .ypColorSelection5
         actionButton.layer.cornerRadius = 17
         actionButton.clipsToBounds = true
         actionButton.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
