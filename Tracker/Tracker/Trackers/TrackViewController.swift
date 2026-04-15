@@ -33,7 +33,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         let configuration = UIImage.SymbolConfiguration(pointSize: 26, weight: .medium) // или .heavy, .black
         let image = UIImage(systemName: "plus", withConfiguration: configuration)
         addTrack.setImage(image, for: .normal)
-        addTrack.tintColor = .blackDay
+        addTrack.tintColor = .textColorDay
         addTrack.contentMode = .scaleAspectFit
         addTrack.accessibilityIdentifier = "addTracker"
         addTrack.addTarget(self, action: #selector(tapAddTrack), for: .touchUpInside)
@@ -45,7 +45,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         let nameFunction = UILabel()
         nameFunction.text = "Трекеры"
         nameFunction.font = .systemFont(ofSize: 34, weight: .bold)
-        nameFunction.textColor = .blackDay // Динамический цвет текста: Черный для Light, Белый для Dark
+        nameFunction.textColor = .textColorDay // Динамический цвет текста: Черный для Light, Белый для Dark
         nameFunction.translatesAutoresizingMaskIntoConstraints = false
         return nameFunction
     }()
@@ -114,7 +114,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         let dymmyLabel = UILabel()
         dymmyLabel.text = "Что будем отслеживать?"
         dymmyLabel.font = .systemFont(ofSize: 12, weight: .medium)
-        dymmyLabel.textColor = .blackDay
+        dymmyLabel.textColor = .textColorDay
         dymmyLabel.translatesAutoresizingMaskIntoConstraints = false
         return dymmyLabel
     }()
@@ -220,7 +220,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     // MARK: - Setup
     private func setupViews() {
         // Динамический цвет фона: Белый в Light, Черный в Dark
-        view.backgroundColor = .whiteDay
+        view.backgroundColor = .backgroundColorDay
         view.addSubview(datePicker)
         view.addSubview(nameFunction)
         view.addSubview(searchContainerView)
@@ -238,7 +238,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         datePicker.addTarget(self, action: #selector(dateChanged), for: .valueChanged)
         
         // Используем системный фон для коллекции
-        collectionView.backgroundColor = .whiteDay
+        collectionView.backgroundColor = .backgroundColorDay
         collectionView.register(TrackerHeader.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: TrackerHeader.identifier)
         collectionView.register(TrackCell.self, forCellWithReuseIdentifier: TrackCell.identifier)
         collectionView.dataSource = self

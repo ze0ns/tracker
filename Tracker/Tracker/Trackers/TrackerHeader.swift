@@ -36,6 +36,6 @@ final class TrackerHeader: UICollectionReusableView {
     
     func configure(title: String) {
         titleLabel.text = title
-        titleLabel.textColor = .blackDay
+        titleLabel.textColor = .textColorDay
     }
 }

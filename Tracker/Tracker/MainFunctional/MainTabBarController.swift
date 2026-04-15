@@ -21,7 +21,7 @@ final class MainTabBarController: UITabBarController {
         tabBar.isHidden = true
         let tabItems = createTabItems()
         let tabBar = CustomTabBar(items: tabItems)
-        tabBar.backgroundColor = .whiteDay
+        tabBar.backgroundColor = .backgroundColorDay
         tabBar.height = customTabBarHeight
         tabBar.translatesAutoresizingMaskIntoConstraints = false
         tabBar.onItemSelected = { [weak self] index in

@@ -48,7 +48,7 @@ extension UIColor {
     }
     // MARK: - UIColor Extension for Dark Mode Support
         // Основной цвет фона экрана
-        static let whiteDay: UIColor = UIColor { traitCollection in
+        static let backgroundColorDay: UIColor = UIColor { traitCollection in
             switch traitCollection.userInterfaceStyle {
             case .dark:
                 return .ypBlackDay // Черный фон в темной теме
@@ -58,22 +58,12 @@ extension UIColor {
         }
         
         // Основной цвет текста/элементов
-        static let blackDay: UIColor = UIColor { traitCollection in
+        static let textColorDay: UIColor = UIColor { traitCollection in
             switch traitCollection.userInterfaceStyle {
             case .dark:
                 return .ypWhiteDay // Белый текст в темной теме
             default:
                 return .ypBlackDay // Черный текст в светлой теме
-            }
-        }
-        
-        // Цвет фона полей ввода и ячеек
-        static let backgroundDay: UIColor = UIColor { traitCollection in
-            switch traitCollection.userInterfaceStyle {
-            case .dark:
-                return UIColor(red: 38/255, green: 38/255, blue: 40/255, alpha: 1.0) // Темно-серый
-            default:
-                return UIColor(red: 241/255, green: 241/255, blue: 244/255, alpha: 1.0) // Светло-серый
             }
         }
 

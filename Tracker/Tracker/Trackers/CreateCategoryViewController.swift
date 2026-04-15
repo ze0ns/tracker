@@ -33,7 +33,7 @@ final class CreateCategoryViewController: UIViewController {
     private lazy var nameTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "Введите название категории"
-        textField.backgroundColor = .whiteDay
+        textField.backgroundColor = .backgroundColorDay
         textField.layer.cornerRadius = 16
         textField.font = .systemFont(ofSize: 17)
         textField.textColor = .black
