@@ -420,14 +420,7 @@ extension TrackViewController: UICollectionViewDataSource {
         cell.contextMenuProvider = { [weak self] in
             guard let self = self else { return nil }
             
-            let isPinned = tracker.isPinned
             
-            let pinTitle = isPinned ? "Открепить" : "Закрепить"
-            let pinImage = isPinned ? UIImage(systemName: "pin.slash") : UIImage(systemName: "pin")
-            
-            let pinAction = UIAction(title: pinTitle, image: pinImage) { _ in
-                print("Нажато: \(pinTitle) для \(tracker.name)")
-            }
             
             let editAction = UIAction(title: "Редактировать", image: UIImage(systemName: "pencil")) { _ in
                 print("Нажато: Редактировать \(tracker.name)")
@@ -437,7 +430,7 @@ extension TrackViewController: UICollectionViewDataSource {
                 self.deleteTracker(tracker, at: indexPath)
             }
             
-            return UIMenu(title: "", children: [pinAction, editAction, deleteAction])
+            return UIMenu(title: "", children: [editAction, deleteAction])
         }
         
         return cell

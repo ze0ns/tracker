@@ -1,9 +1,3 @@
-//
-//  TrackerScreenShotTests.swift
-//  TrackerScreenShotTests
-//
-//  Created by Oschepkov Aleksandr on 14.04.2026.
-//
 import XCTest
 import SnapshotTesting
 @testable import Tracker
@@ -26,10 +20,19 @@ final class TrackViewControllerTests: XCTestCase {
 
     // MARK: - Tests
 
+    // Тест для СВЕТЛОЙ темы
     func testTrackViewControllerLightMode() {
         sut.view.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
         _ = sut.view
         sut.view.layoutIfNeeded()
         assertSnapshot(of: sut.view, as: .image(traits: .init(userInterfaceStyle: .light)))
+    }
+    
+    // Тест для ТЕМНОЙ темы 
+    func testTrackViewControllerDarkMode() {
+        sut.view.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        _ = sut.view
+        sut.view.layoutIfNeeded()
+        assertSnapshot(of: sut.view, as: .image(traits: .init(userInterfaceStyle: .dark)))
     }
 }
