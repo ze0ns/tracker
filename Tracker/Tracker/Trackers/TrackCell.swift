@@ -5,6 +5,7 @@
 //  Created by Oschepkov Aleksandr on 09.03.2026.
 //
 import UIKit
+import AppMetricaCore
 
 final class TrackCell: UICollectionViewCell {
     
@@ -139,6 +140,9 @@ final class TrackCell: UICollectionViewCell {
     // MARK: - Actions
     
     @objc private func buttonTapped() {
+        AppMetrica.reportEvent(name: "EVENT", parameters: ["event" :"click","screen" :"main","item" :"track"], onFailure: { error in
+            print("Ошибка отправки метрики: %@", error.localizedDescription)
+        })
         onButtonTapped?()
     }
     

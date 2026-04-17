@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import AppMetricaCore
 
 protocol TrackViewControllerDelegate: AnyObject {
     func didTrackers(_ trackers: [Tracker])
@@ -25,12 +26,13 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     private let trackerStore = TrackerStore()
     private var searchText: String = ""
     private var currentFilter: TrackerFilter = .all
+
     
     // MARK: - UI Elements
     
     private lazy var addTrack: UIButton = {
         let addTrack = UIButton()
-        let configuration = UIImage.SymbolConfiguration(pointSize: 26, weight: .medium) // или .heavy, .black
+        let configuration = UIImage.SymbolConfiguration(pointSize: 26, weight: .medium)
         let image = UIImage(systemName: "plus", withConfiguration: configuration)
         addTrack.setImage(image, for: .normal)
         addTrack.tintColor = .textColorDay
@@ -45,7 +47,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         let nameFunction = UILabel()
         nameFunction.text = "Трекеры"
         nameFunction.font = .systemFont(ofSize: 34, weight: .bold)
-        nameFunction.textColor = .textColorDay // Динамический цвет текста: Черный для Light, Белый для Dark
+        nameFunction.textColor = .textColorDay
         nameFunction.translatesAutoresizingMaskIntoConstraints = false
         return nameFunction
     }()
@@ -219,7 +221,6 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     
     // MARK: - Setup
     private func setupViews() {
-        // Динамический цвет фона: Белый в Light, Черный в Dark
         view.backgroundColor = .backgroundColorDay
         view.addSubview(datePicker)
         view.addSubview(nameFunction)
@@ -237,7 +238,6 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     private func configureAppearance() {
         datePicker.addTarget(self, action: #selector(dateChanged), for: .valueChanged)
         
-        // Используем системный фон для коллекции
         collectionView.backgroundColor = .backgroundColorDay
         collectionView.register(TrackerHeader.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: TrackerHeader.identifier)
         collectionView.register(TrackCell.self, forCellWithReuseIdentifier: TrackCell.identifier)
@@ -296,7 +296,6 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         ])
     }
     
-    // MARK: - ИСПРАВЛЕННАЯ ЛОГИКА PLACEHOLDER'а
     private func updatePlaceholderVisibility() {
         let isHidden = !visibleCategories.isEmpty
         
@@ -328,6 +327,10 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     }
     
     @objc func filterButtonTapped() {
+        AppMetrica.reportEvent(name: "EVENT", parameters: ["event": "click", "screen": "main", "item": "filter"], onFailure: { error in
+            print("Ошибка отправки метрики: %@", error.localizedDescription)
+        })
+        print("📊 Метрика отправлена: click (item: filter)")
         let filtersVC = FiltersViewController(selectedFilter: currentFilter)
         filtersVC.delegate = self
         present(filtersVC, animated: true)
@@ -346,6 +349,10 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     }
     
     @objc func tapAddTrack() {
+        AppMetrica.reportEvent(name: "EVENT", parameters: ["event": "click", "screen": "main", "item": "add_track"], onFailure: { error in
+            print("Ошибка отправки метрики: %@", error.localizedDescription)
+        })
+        print("📊 Метрика отправлена: click (item: add_track)")
         let createVC = CreateTrackerViewController(trackerStore: trackerStore)
         
         createVC.onTrackerCreated = { [weak self] tracker, category in
@@ -356,8 +363,6 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         navController.modalPresentationStyle = .automatic
         self.present(navController, animated: true)
     }
-    
-    // MARK: - NewHabitViewControllerDelegate Implementation
     func didCreateHabit(_ habit: Tracker, category: String) {
         trackerStore.addTracker(habit, toCategory: category)
         collectionView.reloadData()
@@ -407,6 +412,7 @@ extension TrackViewController: UICollectionViewDataSource {
         
         cell.onButtonTapped = { [weak self] in
             guard let self = self else { return }
+           
             self.trackerStore.toggleTrackerRecord(trackerId: tracker.id.uuidString, date: currentDate)
             
             switch self.currentFilter {
@@ -420,13 +426,19 @@ extension TrackViewController: UICollectionViewDataSource {
         cell.contextMenuProvider = { [weak self] in
             guard let self = self else { return nil }
             
-            
-            
             let editAction = UIAction(title: "Редактировать", image: UIImage(systemName: "pencil")) { _ in
+                AppMetrica.reportEvent(name: "EVENT", parameters: ["event": "click", "screen": "main", "item": "edit"], onFailure: { error in
+                    print("Ошибка отправки метрики: %@", error.localizedDescription)
+                })
+                print("📊 Метрика отправлена: click (item: edit)")
                 print("Нажато: Редактировать \(tracker.name)")
             }
             
             let deleteAction = UIAction(title: "Удалить", image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
+                AppMetrica.reportEvent(name: "EVENT", parameters: ["event": "click", "screen": "main", "item": "delete"], onFailure: { error in
+                    print("Ошибка отправки метрики: %@", error.localizedDescription)
+                })
+                print("📊 Метрика отправлена: click (item: delete)")
                 self.deleteTracker(tracker, at: indexPath)
             }
             
@@ -512,4 +524,3 @@ extension TrackViewController {
         self.present(alert, animated: true)
     }
 }
-
