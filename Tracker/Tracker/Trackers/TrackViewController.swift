@@ -26,7 +26,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     private let trackerStore = TrackerStore()
     private var searchText: String = ""
     private var currentFilter: TrackerFilter = .all
-
+    
     
     // MARK: - UI Elements
     
@@ -412,8 +412,12 @@ extension TrackViewController: UICollectionViewDataSource {
         
         cell.onButtonTapped = { [weak self] in
             guard let self = self else { return }
-           
+            
+            // Переключаем статус записи
             self.trackerStore.toggleTrackerRecord(trackerId: tracker.id.uuidString, date: currentDate)
+            
+            // ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ ДЛЯ СТАТИСТИКИ
+            NotificationCenter.default.post(name: .trackerRecordsDidChange, object: nil)
             
             switch self.currentFilter {
             case .completed, .uncompleted:

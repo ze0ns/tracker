@@ -1,14 +1,6 @@
 //
-//  ViewController.swift
-//  Tracker
-//
-//  Created by Oschepkov Aleksandr on 07.03.2026.
-//
-//
 //  StatisticViewController.swift
 //  Tracker
-//
-//  Created by Oschepkov Aleksandr on 14.04.2026.
 //
 
 import UIKit
@@ -17,6 +9,11 @@ import UIKit
 struct StatisticItem {
     let title: String
     let value: Int
+}
+
+// Ключ для уведомления об изменении данных
+extension Notification.Name {
+    static let trackerRecordsDidChange = Notification.Name("trackerRecordsDidChange")
 }
 
 final class StatisticViewController: UIViewController {
@@ -47,13 +44,39 @@ final class StatisticViewController: UIViewController {
         tableView.isScrollEnabled = false
         return tableView
     }()
+    
+    private lazy var placeholderLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Анализировать пока нечего"
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.textColor = .ypBlackDay
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.isHidden = true
+        return label
+    }()
+    
+    private lazy var placeholderImage: UIImageView = {
+        let iv = UIImageView(image: UIImage(resource: .noActivity))
+        iv.contentMode = .scaleAspectFit
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        iv.isHidden = true
+        return iv
+    }()
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
         setupConstraints()
-        updateStatistics()
+        
+        // Слушаем уведомление об изменении записей (из TrackViewController)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleDataChange),
+            name: .trackerRecordsDidChange,
+            object: nil
+        )
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -62,12 +85,18 @@ final class StatisticViewController: UIViewController {
         trackerStore.loadData()
         updateStatistics()
     }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
 
     // MARK: - Setup
     private func setupView() {
         view.backgroundColor = .backgroundColorDay
         view.addSubview(titleLabel)
         view.addSubview(tableView)
+        view.addSubview(placeholderImage)
+        view.addSubview(placeholderLabel)
     }
 
     private func setupConstraints() {
@@ -78,38 +107,81 @@ final class StatisticViewController: UIViewController {
             tableView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 77),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            tableView.heightAnchor.constraint(equalToConstant: 380), // Фиксируем высоту под 4 ячейки
+            
+            placeholderImage.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            placeholderImage.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            placeholderImage.heightAnchor.constraint(equalToConstant: 80),
+            placeholderImage.widthAnchor.constraint(equalToConstant: 80),
+            
+            placeholderLabel.topAnchor.constraint(equalTo: placeholderImage.bottomAnchor, constant: 8),
+            placeholderLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
     }
     
+    @objc private func handleChange() {
+        trackerStore.loadData()
+        updateStatistics()
+    }
+    
     private func updateStatistics() {
-        // 1. Трекеров завершено (общее количество записей)
+        // 1. Трекеров завершено
+        // Считаем общее количество записей в completedTrackers
         let completedCount = trackerStore.completedTrackers.count
         
-        // 2. Идеальные дни (дни, когда выполнены все запланированные трекеры)
-        // Логика: считаем уникальные дни, берем трекеры на этот день, сравниваем с выполненными
-        var perfectDays = 0
-        let calendar = Calendar.current
+        // 2. Идеальные дни
+        let perfectDays = calculatePerfectDays()
         
-        // Группируем выполненные трекеры по датам
+        // Обновляем массив данных
+        items = [
+            StatisticItem(title: "Лучший период", value: 0),
+            StatisticItem(title: "Идеальные дни", value: perfectDays),
+            StatisticItem(title: "Трекеров завершено", value: completedCount),
+            StatisticItem(title: "Среднее значение", value: 0)
+        ]
+        
+        tableView.reloadData()
+        
+        // Показываем плейсхолдер, если нет выполненных трекеров
+        let hasData = completedCount > 0
+        tableView.isHidden = !hasData
+        placeholderImage.isHidden = hasData
+        placeholderLabel.isHidden = hasData
+    }
+    
+    private func calculatePerfectDays() -> Int {
+        var perfectDaysCount = 0
+        let calendar = Calendar.current
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd.MM.yyyy"
+        
+        // Получаем все уникальные даты, когда что-то было выполнено
         let completedDates = Set(trackerStore.completedTrackers.map { $0.trackDate })
         
-        for date in completedDates {
-            // Определяем день недели для даты
-            let weekday = calendar.component(.weekday, from: DateFormatter().date(from: date) ?? Date())
-            let requiredIndex = (weekday + 5) % 7 + 1
-            guard let day = Weekday(rawValue: requiredIndex) else { continue }
+        for dateString in completedDates {
+            guard let date = dateFormatter.date(from: dateString) else { continue }
             
-            // Все трекеры, которые должны были быть в этот день
-            var scheduledCount = 0
+            // Определяем день недели для даты
+            let weekdayIndex = calendar.component(.weekday, from: date)
+            // Ваша логика конвертации (как в TrackViewController)
+            let requiredWeekdayRaw = (weekdayIndex + 5) % 7 + 1
+            guard let requiredDay = Weekday(rawValue: requiredWeekdayRaw) else { continue }
+            
+            // Находим все трекеры, которые должны были быть выполнены в этот день
+            var plannedCount = 0
             var doneCount = 0
             
             for category in trackerStore.categories {
                 for tracker in category.arrayTracker {
-                    if tracker.schedule.contains(day) {
-                        scheduledCount += 1
-                        // Проверяем, выполнен ли он
-                        if trackerStore.completedTrackers.contains(where: { $0.trackID == tracker.id.uuidString && $0.trackDate == date }) {
+                    if tracker.schedule.contains(requiredDay) {
+                        plannedCount += 1
+                        
+                        // Проверяем, выполнен ли этот трекер в эту дату
+                        let isDone = trackerStore.completedTrackers.contains { record in
+                            record.trackID == tracker.id.uuidString && record.trackDate == dateString
+                        }
+                        
+                        if isDone {
                             doneCount += 1
                         }
                     }
@@ -117,21 +189,16 @@ final class StatisticViewController: UIViewController {
             }
             
             // Если в этот день что-то было запланировано и всё выполнено
-            if scheduledCount > 0 && scheduledCount == doneCount {
-                perfectDays += 1
+            if plannedCount > 0 && plannedCount == doneCount {
+                perfectDaysCount += 1
             }
         }
         
-        // Формируем массив данных
-        // Примечание: "Лучший период" и "Среднее значение" требуют дополнительной логики, оставим заглушки или простую логику
-        items = [
-            StatisticItem(title: "Лучший период", value: 0), // Требует сложной логики хранения истории
-            StatisticItem(title: "Идеальные дни", value: perfectDays),
-            StatisticItem(title: "Трекеров завершено", value: completedCount),
-            StatisticItem(title: "Среднее значение", value: 0) // Можно вычислить как completedCount / кол-во дней
-        ]
-        
-        tableView.reloadData()
+        return perfectDaysCount
+    }
+    
+    @objc private func handleDataChange() {
+        updateStatistics()
     }
 }
 
