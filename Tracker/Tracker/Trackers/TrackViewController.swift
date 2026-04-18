@@ -1,41 +1,24 @@
 //
 //  TrackViewController.swift
 //
-//
-//  Created by Oschepkov Aleksandr on 09.03.2026.
-//
 
 import UIKit
-import AppMetricaCore
 
 protocol TrackViewControllerDelegate: AnyObject {
     func didTrackers(_ trackers: [Tracker])
 }
 
-// MARK: - Filter Enum
-enum TrackerFilter {
-    case all
-    case today
-    case completed
-    case uncompleted
-}
-
-class TrackViewController: UIViewController, NewHabitViewControllerDelegate, FiltersViewControllerDelegate {
+class TrackViewController: UIViewController, NewHabitViewControllerDelegate {
     
-    // MARK: - Properties
-    private let trackerStore = TrackerStore()
-    private var searchText: String = ""
-    private var currentFilter: TrackerFilter = .all
-    
+    // MARK: - Public Properties
+    var categories: [TrackerCategory] = []
+    var completedTrackers: [TrackerRecord] = []
     
     // MARK: - UI Elements
     
     private lazy var addTrack: UIButton = {
         let addTrack = UIButton()
-        let configuration = UIImage.SymbolConfiguration(pointSize: 26, weight: .medium)
-        let image = UIImage(systemName: "plus", withConfiguration: configuration)
-        addTrack.setImage(image, for: .normal)
-        addTrack.tintColor = .textColorDay
+        addTrack.setImage(UIImage(resource: .addTracker), for: .normal)
         addTrack.contentMode = .scaleAspectFit
         addTrack.accessibilityIdentifier = "addTracker"
         addTrack.addTarget(self, action: #selector(tapAddTrack), for: .touchUpInside)
@@ -45,63 +28,10 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     
     private lazy var nameFunction: UILabel = {
         let nameFunction = UILabel()
-        nameFunction.text = NSLocalizedString("Trackers", comment: "Main screen title")
+        nameFunction.text = "Трекеры"
         nameFunction.font = .systemFont(ofSize: 34, weight: .bold)
-        nameFunction.textColor = .textColorDay
         nameFunction.translatesAutoresizingMaskIntoConstraints = false
         return nameFunction
-    }()
-    
-    // MARK: - Filter Button
-    private lazy var filterButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle(NSLocalizedString("Filters", comment: "Filter button"), for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .regular)
-        button.setTitleColor(.ypWhiteDay, for: .normal)
-        button.backgroundColor = .ypBlue
-        button.layer.cornerRadius = 16
-        button.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
-    
-    // MARK: - Search Container
-    private lazy var searchContainerView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .ypGreyOp12
-        view.layer.cornerRadius = 10
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.clipsToBounds = true
-        return view
-    }()
-    
-    private lazy var searchTextField: UITextField = {
-        let textField = UITextField()
-        textField.placeholder = NSLocalizedString("Search", comment: "Search placeholder")
-        textField.backgroundColor = .clear
-        
-        let searchIcon = UIImageView(image: UIImage(systemName: "magnifyingglass"))
-        searchIcon.tintColor = .ypGray
-        searchIcon.contentMode = .center
-        
-        let iconContainerView = UIView(frame: CGRect(x: 0, y: 0, width: 40, height: 20))
-        searchIcon.frame = CGRect(x: 10, y: 0, width: 20, height: 20)
-        iconContainerView.addSubview(searchIcon)
-        
-        textField.leftView = iconContainerView
-        textField.leftViewMode = .always
-        
-        textField.textColor = .ypBlackDay
-        textField.font = .systemFont(ofSize: 17)
-        textField.delegate = self
-        
-        textField.attributedPlaceholder = NSAttributedString(
-            string: NSLocalizedString("Search", comment: "Search placeholder"),
-            attributes: [NSAttributedString.Key.foregroundColor: UIColor.ypGray]
-        )
-        
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        return textField
     }()
     
     private lazy var dymmy: UIImageView = {
@@ -111,12 +41,10 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         dymmy.translatesAutoresizingMaskIntoConstraints = false
         return dymmy
     }()
-    
     private lazy var dymmyLabel: UILabel = {
         let dymmyLabel = UILabel()
-        dymmyLabel.text = NSLocalizedString("What will we track?", comment: "Empty state placeholder")
+        dymmyLabel.text = "Что будем отслеживать?"
         dymmyLabel.font = .systemFont(ofSize: 12, weight: .medium)
-        dymmyLabel.textColor = .textColorDay
         dymmyLabel.translatesAutoresizingMaskIntoConstraints = false
         return dymmyLabel
     }()
@@ -125,76 +53,29 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         let picker = UIDatePicker()
         picker.datePickerMode = .date
         picker.preferredDatePickerStyle = .compact
-        picker.locale = Locale(identifier: "ru_RU") // Оставляем русскую локаль для пикера дат
+        picker.locale = Locale(identifier: "ru_RU")
         picker.translatesAutoresizingMaskIntoConstraints = false
         return picker
-    }()
-    private lazy var dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd.MM.yyyy"
-        return formatter
     }()
     
     let collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
     
     // MARK: - Computed Properties
     
-    private var hasTrackersForSelectedDate: Bool {
-        let calendar = Calendar.current
-        let filterDate = datePicker.date
-        
-        let calendarWeekday = calendar.component(.weekday, from: filterDate)
-        let requiredWeekdayIndex = (calendarWeekday + 5) % 7 + 1
-        guard let requiredDay = Weekday(rawValue: requiredWeekdayIndex) else { return false }
-        
-        for category in trackerStore.categories {
-            let trackersForDay = category.arrayTracker.filter { tracker in
-                return tracker.schedule.contains(requiredDay)
-            }
-            if !trackersForDay.isEmpty {
-                return true
-            }
-        }
-        return false
-    }
-    
     private var visibleCategories: [TrackerCategory] {
         let calendar = Calendar.current
-        
-        let filterDate = datePicker.date
-        
-        let calendarWeekday = calendar.component(.weekday, from: filterDate)
+        let calendarWeekday = calendar.component(.weekday, from: datePicker.date)
         let requiredWeekdayIndex = (calendarWeekday + 5) % 7 + 1
-        guard let requiredDay = Weekday(rawValue: requiredWeekdayIndex) else { return [] }
         
-        dateFormatter.dateFormat = "dd.MM.yyyy"
-        let dateString = dateFormatter.string(from: filterDate)
-        
-        return trackerStore.categories.compactMap { category in
-            let trackersForDay = category.arrayTracker.filter { tracker in
+        guard let requiredDay = Weekday(rawValue: requiredWeekdayIndex) else {
+            return []
+        }
+        return categories.compactMap { category in
+            let filteredTrackers = category.arrayTracker.filter { tracker in
                 return tracker.schedule.contains(requiredDay)
             }
-            
-            var filtered = trackersForDay
-            if !searchText.isEmpty {
-                filtered = filtered.filter { $0.name.lowercased().contains(searchText.lowercased()) }
-            }
-            
-            switch currentFilter {
-            case .completed:
-                filtered = filtered.filter { tracker in
-                    trackerStore.completedTrackers.contains { $0.trackID == tracker.id.uuidString && $0.trackDate == dateString }
-                }
-            case .uncompleted:
-                filtered = filtered.filter { tracker in
-                    !trackerStore.completedTrackers.contains { $0.trackID == tracker.id.uuidString && $0.trackDate == dateString }
-                }
-            case .all, .today:
-                break
-            }
-            
-            if !filtered.isEmpty {
-                return TrackerCategory(nameTrackerCategory: category.nameTrackerCategory, arrayTracker: filtered)
+            if !filteredTrackers.isEmpty {
+                return TrackerCategory(nameTrackerCategory: category.nameTrackerCategory, arrayTracker: filteredTrackers)
             } else {
                 return nil
             }
@@ -207,38 +88,27 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         setupViews()
         setupConstraints()
         configureAppearance()
-        trackerStore.loadData()
-        collectionView.reloadData()
-        updatePlaceholderVisibility()
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        trackerStore.loadData()
-        collectionView.reloadData()
         updatePlaceholderVisibility()
     }
     
     // MARK: - Setup
     private func setupViews() {
-        view.backgroundColor = .backgroundColorDay
+        view.backgroundColor = .white
         view.addSubview(datePicker)
         view.addSubview(nameFunction)
-        view.addSubview(searchContainerView)
-        searchContainerView.addSubview(searchTextField)
         view.addSubview(collectionView)
         view.addSubview(addTrack)
         view.addSubview(dymmy)
         view.addSubview(dymmyLabel)
-        view.addSubview(filterButton)
         
         collectionView.translatesAutoresizingMaskIntoConstraints = false
     }
     
     private func configureAppearance() {
+
         datePicker.addTarget(self, action: #selector(dateChanged), for: .valueChanged)
         
-        collectionView.backgroundColor = .backgroundColorDay
+        collectionView.backgroundColor = .white
         collectionView.register(TrackerHeader.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: TrackerHeader.identifier)
         collectionView.register(TrackCell.self, forCellWithReuseIdentifier: TrackCell.identifier)
         collectionView.dataSource = self
@@ -254,37 +124,21 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            addTrack.topAnchor.constraint(equalTo: view.topAnchor, constant: 57),
+            addTrack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 1),
             addTrack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 6),
             addTrack.heightAnchor.constraint(equalToConstant: 42),
             addTrack.widthAnchor.constraint(equalToConstant: 42),
             
-            datePicker.topAnchor.constraint(equalTo: view.topAnchor, constant: 57),
+            datePicker.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 5),
             datePicker.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            datePicker.heightAnchor.constraint(equalToConstant: 34),
             
             nameFunction.topAnchor.constraint(equalTo: addTrack.bottomAnchor, constant: 1),
             nameFunction.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             
-            searchContainerView.topAnchor.constraint(equalTo: nameFunction.bottomAnchor, constant: 7),
-            searchContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            searchContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            searchContainerView.heightAnchor.constraint(equalToConstant: 36),
-            
-            searchTextField.topAnchor.constraint(equalTo: searchContainerView.topAnchor),
-            searchTextField.bottomAnchor.constraint(equalTo: searchContainerView.bottomAnchor),
-            searchTextField.leadingAnchor.constraint(equalTo: searchContainerView.leadingAnchor),
-            searchTextField.trailingAnchor.constraint(equalTo: searchContainerView.trailingAnchor),
-            
-            collectionView.topAnchor.constraint(equalTo: searchContainerView.bottomAnchor, constant: 10),
+            collectionView.topAnchor.constraint(equalTo: nameFunction.bottomAnchor, constant: 20),
+            collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            collectionView.bottomAnchor.constraint(equalTo: filterButton.topAnchor, constant: -16),
-            
-            filterButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            filterButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -56),
-            filterButton.widthAnchor.constraint(equalToConstant: 200),
-            filterButton.heightAnchor.constraint(equalToConstant: 50),
             
             dymmy.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor),
             dymmy.centerYAnchor.constraint(equalTo: collectionView.centerYAnchor),
@@ -293,67 +147,23 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
             
             dymmyLabel.topAnchor.constraint(equalTo: dymmy.bottomAnchor, constant: 8),
             dymmyLabel.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor),
+ 
         ])
     }
     
     private func updatePlaceholderVisibility() {
-        let isHidden = !visibleCategories.isEmpty
-        
-        dymmy.isHidden = isHidden
-        dymmyLabel.isHidden = isHidden
-        
-        if hasTrackersForSelectedDate && visibleCategories.isEmpty {
-            dymmyLabel.text = NSLocalizedString("Nothing found", comment: "Placeholder when no results")
-        } else {
-            dymmyLabel.text = NSLocalizedString("What will we track?", comment: "Placeholder when empty")
-        }
-        
-        filterButton.isHidden = !hasTrackersForSelectedDate
+        dymmy.isHidden = !visibleCategories.isEmpty
+        dymmyLabel.isHidden = !visibleCategories.isEmpty
     }
     
     // MARK: - Actions
-    
     @objc func dateChanged() {
-        let calendar = Calendar.current
-        let isToday = calendar.isDateInToday(datePicker.date)
-        
-        if isToday && currentFilter == .today {
-        } else {
-            currentFilter = .all
-        }
-        
-        collectionView.reloadData()
-        updatePlaceholderVisibility()
-    }
-    
-    @objc func filterButtonTapped() {
-        AppMetrica.reportEvent(name: "EVENT", parameters: ["event": "click", "screen": "main", "item": "filter"], onFailure: { error in
-            print("Ошибка отправки метрики: %@", error.localizedDescription)
-        })
-        print("📊 Метрика отправлена: click (item: filter)")
-        let filtersVC = FiltersViewController(selectedFilter: currentFilter)
-        filtersVC.delegate = self
-        present(filtersVC, animated: true)
-    }
-    
-    // MARK: - FiltersViewControllerDelegate
-    func didSelectFilter(_ filter: TrackerFilter) {
-        currentFilter = filter
-        
-        if filter == .today {
-            datePicker.date = Date()
-        }
-        
         collectionView.reloadData()
         updatePlaceholderVisibility()
     }
     
     @objc func tapAddTrack() {
-        AppMetrica.reportEvent(name: "EVENT", parameters: ["event": "click", "screen": "main", "item": "add_track"], onFailure: { error in
-            print("Ошибка отправки метрики: %@", error.localizedDescription)
-        })
-        print("📊 Метрика отправлена: click (item: add_track)")
-        let createVC = CreateTrackerViewController(trackerStore: trackerStore)
+        let createVC = CreateTrackerViewController()
         
         createVC.onTrackerCreated = { [weak self] tracker, category in
             self?.didCreateHabit(tracker, category: category)
@@ -364,36 +174,21 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         self.present(navController, animated: true)
     }
     
+    // MARK: - NewHabitViewControllerDelegate Implementation
     func didCreateHabit(_ habit: Tracker, category: String) {
-        trackerStore.addTracker(habit, toCategory: category)
+        if let index = categories.firstIndex(where: { $0.nameTrackerCategory == category }) {
+            var existingCategory = categories[index]
+            var newTrackers = existingCategory.arrayTracker
+            newTrackers.append(habit)
+            categories[index] = TrackerCategory(nameTrackerCategory: existingCategory.nameTrackerCategory, arrayTracker: newTrackers)
+        } else {
+            let newCategory = TrackerCategory(nameTrackerCategory: category, arrayTracker: [habit])
+            categories.append(newCategory)
+        }
+        
         collectionView.reloadData()
         updatePlaceholderVisibility()
-        print("Трекер '\(habit.name)' добавлен в категорию '\(category)' и сохранен в CoreData")
-    }
-    
-    // MARK: - Helpers for Localization
-    private func localizedStringForDays(_ count: Int) -> String {
-        // Для английского: 1 day, 2 days
-        // Для русского: 1 день, 2 дня, 5 дней
-        
-        let language = Locale.current.language.languageCode?.identifier ?? "en"
-        
-        if language == "ru" {
-            // Русская логика
-            let remainder10 = count % 10
-            let remainder100 = count % 100
-            
-            if remainder10 == 1 && remainder100 != 11 {
-                return NSLocalizedString("day", comment: "1 day")
-            } else if (remainder10 >= 2 && remainder10 <= 4) && (remainder100 < 12 || remainder100 > 14) {
-                return NSLocalizedString("days_2", comment: "2-4 days")
-            } else {
-                return NSLocalizedString("days", comment: "5+ days")
-            }
-        } else {
-            // Английская логика
-            return count == 1 ? NSLocalizedString("day", comment: "1 day") : NSLocalizedString("days", comment: "Days plural")
-        }
+        print("Трекер '\(habit.name)' добавлен в категорию '\(category)'")
     }
 }
 
@@ -415,60 +210,46 @@ extension TrackViewController: UICollectionViewDataSource {
         let tracker = visibleCategories[indexPath.section].arrayTracker[indexPath.row]
         let currentDate = datePicker.date
         
-        let color = UIColor(hex: tracker.color) ?? .ypColorSelection1
-        
+        // 1. Форматируем дату для сравнения и сохранения
+        let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "dd.MM.yyyy"
         let dateString = dateFormatter.string(from: currentDate)
         
-        let isDone = trackerStore.completedTrackers.contains { record in
+        // 2. Проверяем, есть ли уже запись для этого трекера в эту дату
+        let isDone = completedTrackers.contains { record in
             record.trackID == tracker.id.uuidString && record.trackDate == dateString
         }
         
-        let daysCount = trackerStore.completedTrackers.filter { $0.trackID == tracker.id.uuidString }.count
+        // 3. Считаем общее количество выполнений этого трекера за все время
+        let daysCount = completedTrackers.filter { $0.trackID == tracker.id.uuidString }.count
         
-        let daysString = localizedStringForDays(daysCount)
-        
+        // 4. Настраиваем ячейку
         cell.configure(
             id: tracker.id.uuidString,
             jobsName: tracker.name,
             daysCount: daysCount,
             isDone: isDone,
-            date: currentDate,
-            emoji: tracker.emodji,
-            color: color
+            date: currentDate
         )
         
+        // 5. Обрабатываем нажатие кнопки
         cell.onButtonTapped = { [weak self] in
             guard let self = self else { return }
-            self.trackerStore.toggleTrackerRecord(trackerId: tracker.id.uuidString, date: currentDate)
-            NotificationCenter.default.post(name: .trackerRecordsDidChange, object: nil)
             
-            switch self.currentFilter {
-            case .completed, .uncompleted:
-                self.collectionView.reloadData()
-            default:
-                self.collectionView.reloadItems(at: [indexPath])
-            }
-        }
-        
-        cell.contextMenuProvider = { [weak self] in
-            guard let self = self else { return nil }
+            // Создаем модель записи
+            let record = TrackerRecord(trackID: tracker.id.uuidString, trackDate: dateString)
             
-            let editAction = UIAction(title: NSLocalizedString("Edit", comment: "Menu"), image: UIImage(systemName: "pencil")) { _ in
-                AppMetrica.reportEvent(name: "EVENT", parameters: ["event": "click", "screen": "main", "item": "edit"], onFailure: { error in
-                    print("Ошибка отправки метрики: %@", error.localizedDescription)
-                })
-                print("📊 Метрика отправлена: click (item: edit)")
+            // Если запись уже есть -> удаляем (отмена выполнения)
+            // Если записи нет -> добавляем (выполнено)
+            if let index = self.completedTrackers.firstIndex(of: record) {
+                self.completedTrackers.remove(at: index)
+            } else {
+                self.completedTrackers.append(record)
             }
             
-            let deleteAction = UIAction(title: NSLocalizedString("Delete", comment: "Menu"), image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
-                AppMetrica.reportEvent(name: "EVENT", parameters: ["event": "click", "screen": "main", "item": "delete"], onFailure: { error in
-                    print("Ошибка отправки метрики: %@", error.localizedDescription)
-                })
-                self.deleteTracker(tracker, at: indexPath)
-            }
-            
-            return UIMenu(title: "", children: [editAction, deleteAction])
+            // Перезагружаем ячейку, чтобы обновить счетчик дней и состояние кнопки
+            // Используем performBatchUpdates для плавности, либо просто reloadItems
+            self.collectionView.reloadItems(at: [indexPath])
         }
         
         return cell
@@ -486,25 +267,6 @@ extension TrackViewController: UICollectionViewDataSource {
     }
 }
 
-// MARK: - UITextFieldDelegate
-extension TrackViewController: UITextFieldDelegate {
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        textField.resignFirstResponder()
-        return true
-    }
-    
-    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-        if let text = textField.text, let textRange = Range(range, in: text) {
-            let updatedText = text.replacingCharacters(in: textRange, with: string)
-            searchText = updatedText
-            collectionView.reloadData()
-            updatePlaceholderVisibility()
-        }
-        return true
-    }
-}
-
-// MARK: - UICollectionViewDelegateFlowLayout
 extension TrackViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
         return CGSize(width: collectionView.bounds.width, height: 50)
@@ -523,31 +285,5 @@ extension TrackViewController: UICollectionViewDelegateFlowLayout {
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
         return 9
-    }
-}
-
-// MARK: - Private Helper Methods
-extension TrackViewController {
-    private func deleteTracker(_ tracker: Tracker, at indexPath: IndexPath) {
-        let titleStr = NSLocalizedString("Delete tracker?", comment: "Alert title")
-        let messageStr = String(format: NSLocalizedString("Are you sure you want to delete tracker \"%@\"? This action cannot be undone.", comment: "Alert message"), tracker.name)
-        let deleteStr = NSLocalizedString("Delete", comment: "Alert button")
-        let cancelStr = NSLocalizedString("Cancel", comment: "Alert button")
-        
-        let alert = UIAlertController(title: titleStr, message: messageStr, preferredStyle: .alert)
-        
-        let deleteAction = UIAlertAction(title: deleteStr, style: .destructive) { _ in
-            self.trackerStore.deleteTracker(tracker)
-            self.trackerStore.loadData()
-            self.collectionView.reloadData()
-            self.updatePlaceholderVisibility()
-        }
-        
-        let cancelAction = UIAlertAction(title: cancelStr, style: .cancel)
-        
-        alert.addAction(deleteAction)
-        alert.addAction(cancelAction)
-        
-        self.present(alert, animated: true)
     }
 }

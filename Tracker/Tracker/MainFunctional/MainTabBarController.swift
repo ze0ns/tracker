@@ -8,7 +8,7 @@ import UIKit
 
 final class MainTabBarController: UITabBarController {
     
-    private let customTabBarHeight: CGFloat = 84
+    private let customTabBarHeight: CGFloat = 50
     private var customTabBar: CustomTabBar?
     
     override func viewDidLoad() {
@@ -21,7 +21,7 @@ final class MainTabBarController: UITabBarController {
         tabBar.isHidden = true
         let tabItems = createTabItems()
         let tabBar = CustomTabBar(items: tabItems)
-        tabBar.backgroundColor = .backgroundColorDay
+        tabBar.backgroundColor = .ypWhiteDay
         tabBar.height = customTabBarHeight
         tabBar.translatesAutoresizingMaskIntoConstraints = false
         tabBar.onItemSelected = { [weak self] index in
@@ -30,33 +30,35 @@ final class MainTabBarController: UITabBarController {
         
         view.addSubview(tabBar)
         
+        // Сохраняем ссылку на tabBar
         self.customTabBar = tabBar
         
         // MARK: - Добавление границы (линии сверху)
         let topBorderView = UIView()
-        topBorderView.backgroundColor = .lineColor
+        topBorderView.backgroundColor = .lightGray // Или ваш цвет: .ypGray
         topBorderView.translatesAutoresizingMaskIntoConstraints = false
         tabBar.addSubview(topBorderView)
         
         NSLayoutConstraint.activate([
-            
-            //          tabBar.topAnchor.constraint(equalTo: topBorderView.topAnchor),
-            tabBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tabBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tabBar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            tabBar.heightAnchor.constraint(equalToConstant: customTabBarHeight),
-            
+            // Констрейнты для линии: верх, лево, право и высота
             topBorderView.topAnchor.constraint(equalTo: tabBar.topAnchor),
             topBorderView.leadingAnchor.constraint(equalTo: tabBar.leadingAnchor),
             topBorderView.trailingAnchor.constraint(equalTo: tabBar.trailingAnchor),
-            topBorderView.heightAnchor.constraint(equalToConstant: 0.5),
+            topBorderView.heightAnchor.constraint(equalToConstant: 0.5), // Толщина линии
+        ])
+        
+        NSLayoutConstraint.activate([
+            tabBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tabBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tabBar.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -33),
+            tabBar.heightAnchor.constraint(equalToConstant: customTabBarHeight)
         ])
     }
     
     private func createTabItems() -> [UITabBarItem] {
         let items = [
-            createTabBarItem(title: NSLocalizedString("Trackers", comment: "Trackers button"), imageResource: .trackers, tag: 0),
-            createTabBarItem(title: NSLocalizedString("Statistics", comment: "Statistics button"), imageResource: .statistic, tag: 1)
+            createTabBarItem(title: "", imageResource: .tracker, tag: 0),
+            createTabBarItem(title: "", imageResource: .stats, tag: 1)
         ]
         return items.compactMap { $0 }
     }
@@ -109,8 +111,7 @@ extension MainTabBarController {
     private func updateTabBarSafeArea() {
         guard let tabBar = customTabBar else { return }
         if view.safeAreaInsets.bottom > 0 {
-            tabBar.height = customTabBarHeight
-            // tabBar.height = customTabBarHeight + view.safeAreaInsets.bottom
+            tabBar.height = customTabBarHeight + view.safeAreaInsets.bottom
         }
     }
 }

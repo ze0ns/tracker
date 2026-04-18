@@ -1,27 +1,26 @@
 //
-//  NewHabitViewController.swift
-//  Image Feed
+//  IrregularHabit.swift
+//  Tracker
 //
-//  Created by Oschepkov Aleksandr on 09.03.2026.
+//  Created by Oschepkov Aleksandr on 10.03.2026.
 //
 
 import UIKit
 
-protocol NewHabitViewControllerDelegate: AnyObject {
+protocol IrregularHabitViewControllerDelegate: AnyObject {
     func didCreateHabit(_ habit: Tracker, category: String)
 }
 
-final class NewHabitViewController: UIViewController {
+final class IrregularHabitViewController: UIViewController {
     
     // MARK: - Delegate
-    weak var delegate: NewHabitViewControllerDelegate?
+    weak var delegate: IrregularHabitViewControllerDelegate?
     var onTrackerCreated: ((Tracker, String) -> Void)?
-    
+
     // MARK: - Private Properties
     
     private var selectedCategory: String = "Важное"
     private var selectedSchedule: [Weekday] = []
-    private var selectedDaysCount: Int = 0
     
     // MARK: - UI Elements
  
@@ -38,7 +37,7 @@ final class NewHabitViewController: UIViewController {
     private let nameTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "Введите название трекера"
-        textField.backgroundColor = .ypBackgroundDay
+        textField.backgroundColor = .white
         textField.layer.cornerRadius = 16
         textField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 0))
         textField.leftViewMode = .always
@@ -56,6 +55,7 @@ final class NewHabitViewController: UIViewController {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
+    
     
     private let cancelButton: UIButton = {
         let button = UIButton(type: .system)
@@ -103,10 +103,12 @@ final class NewHabitViewController: UIViewController {
         view.backgroundColor = .white
         
         view.addSubview(titleLabel)
+
+        
         view.addSubview(nameTextField)
         view.addSubview(tableView)
-        view.addSubview(buttonsStackView)
         
+        view.addSubview(buttonsStackView)
         buttonsStackView.addArrangedSubview(cancelButton)
         buttonsStackView.addArrangedSubview(createButton)
     }
@@ -117,7 +119,8 @@ final class NewHabitViewController: UIViewController {
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
-            nameTextField.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20),
+       
+            nameTextField.topAnchor.constraint(equalTo: titleLabel.topAnchor, constant: 20),
             nameTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             nameTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             nameTextField.heightAnchor.constraint(equalToConstant: 75),
@@ -126,6 +129,7 @@ final class NewHabitViewController: UIViewController {
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             tableView.heightAnchor.constraint(equalToConstant: 150),
+            
             
             buttonsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             buttonsStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
@@ -140,25 +144,19 @@ final class NewHabitViewController: UIViewController {
         tableView.delegate = self
     }
     
+
+    
     private func setupActions() {
         cancelButton.addTarget(self, action: #selector(cancelButtonTapped), for: .touchUpInside)
         createButton.addTarget(self, action: #selector(createButtonTapped), for: .touchUpInside)
         nameTextField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
-        
-        // Добавляем жест для скрытия клавиатуры по тапу
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(hideKeyboard))
-        tapGesture.cancelsTouchesInView = false
-        view.addGestureRecognizer(tapGesture)
     }
     
+ 
     private func updateCreateButtonState() {
         let isNameFilled = nameTextField.text?.isEmpty == false
-        let isScheduleSelected = !selectedSchedule.isEmpty
-        
-        let isFormValid = isNameFilled && isScheduleSelected
-        
-        createButton.isEnabled = isFormValid
-        createButton.backgroundColor = isFormValid ? .black : .ypGray
+        createButton.isEnabled = isNameFilled
+        createButton.backgroundColor = isNameFilled ? .black : .ypGray
     }
     
     // MARK: - Actions
@@ -190,7 +188,7 @@ final class NewHabitViewController: UIViewController {
     @objc private func hideKeyboard() {
         view.endEditing(true)
     }
-
+    
     private func showCategoryScreen() {
         let categoryVC = CategoryViewController()
         categoryVC.delegate = self
@@ -199,51 +197,29 @@ final class NewHabitViewController: UIViewController {
         print("CategoryViewController показан")
     }
 
-    private func showScheduleScreen() {
-        let scheduleVC = ScheduleViewController()
-        scheduleVC.delegate = self
-        scheduleVC.selectedDays = selectedSchedule
-        scheduleVC.modalPresentationStyle = .pageSheet
-        present(scheduleVC, animated: true)
-        print("ScheduleViewController показан")
-    }
 }
 
 // MARK: - UITableViewDataSource
-extension NewHabitViewController: UITableViewDataSource {
+extension IrregularHabitViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 2
+        return 1
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "SettingCell", for: indexPath) as? SettingCell else {
             return UITableViewCell()
         }
-        
-        if indexPath.row == 0 {
             cell.configure(title: "Категория", value: selectedCategory)
-        } else {
-            let scheduleText = selectedSchedule.map { $0.fullName }.joined(separator: ", ")
-            cell.configure(title: "Расписание", value: scheduleText)
-        }
-        
-       
-        cell.backgroundColor = .ypBackgroundDay
-        
         return cell
     }
 }
 
 // MARK: - UITableViewDelegate
-extension NewHabitViewController: UITableViewDelegate {
+extension IrregularHabitViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        if indexPath.row == 0 {
             showCategoryScreen()
-        } else {
-            showScheduleScreen()
-        }
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -251,8 +227,10 @@ extension NewHabitViewController: UITableViewDelegate {
     }
 }
 
+
+
 // MARK: - CategoryViewControllerDelegate
-extension NewHabitViewController: CategoryViewControllerDelegate {
+extension IrregularHabitViewController: CategoryViewControllerDelegate {
     func didSelectCategory(_ category: String) {
         selectedCategory = category
         tableView.reloadRows(at: [IndexPath(row: 0, section: 0)], with: .automatic)
@@ -260,27 +238,20 @@ extension NewHabitViewController: CategoryViewControllerDelegate {
     }
 }
 
-// MARK: - ScheduleViewControllerDelegate
-extension NewHabitViewController: ScheduleViewControllerDelegate {
-    func didSelectSchedule(_ schedule: [Weekday]) {
-        selectedSchedule = schedule
-        tableView.reloadRows(at: [IndexPath(row: 1, section: 0)], with: .automatic)
-        updateCreateButtonState()
-    }
-}
-
 // MARK: - UITextFieldDelegate
-extension NewHabitViewController: UITextFieldDelegate {
+extension IrregularHabitViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         return true
     }
 }
 
-// MARK: - SwiftUI for working canvas
+
+//MARK: SwiftUI - for working canvas
 import SwiftUI
-struct CreateHabitPreview: PreviewProvider {
+struct CreateIrregularHabitPreview: PreviewProvider {
     static var previews: some View {
-        VCProvider<NewHabitViewController>.previews
+        VCProvider<IrregularHabitViewController>.previews
     }
 }
+

@@ -1,11 +1,4 @@
-//
-//  TrackCell.swift
-//  Tracker
-//
-//  Created by Oschepkov Aleksandr on 09.03.2026.
-//
 import UIKit
-import AppMetricaCore
 
 final class TrackCell: UICollectionViewCell {
     
@@ -19,7 +12,6 @@ final class TrackCell: UICollectionViewCell {
         cardContainerView.translatesAutoresizingMaskIntoConstraints = false
         return cardContainerView
     }()
-    
     private let emojiContainer: UIView = {
         let view = UIView()
         view.backgroundColor = .ypWhiteOpt30
@@ -27,20 +19,17 @@ final class TrackCell: UICollectionViewCell {
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
-    
-    private let trackEmojiLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 12)
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
+    private let trackEmoji: UIImageView = {
+        let trackEmoji = UIImageView()
+        trackEmoji.image = UIImage(resource: .emoji)
+        trackEmoji.translatesAutoresizingMaskIntoConstraints = false
+        return trackEmoji
     }()
 
     private let trackJobs: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 12, weight: .medium)
         label.textColor = .ypWhiteDay
-        label.numberOfLines = 2
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -48,7 +37,7 @@ final class TrackCell: UICollectionViewCell {
     private let statusLabel: UILabel = {
         let statusLabel = UILabel()
         statusLabel.font = .systemFont(ofSize: 12, weight: .medium)
-        statusLabel.textColor = .textColorDay
+        statusLabel.textColor = .black
         statusLabel.translatesAutoresizingMaskIntoConstraints = false
         return statusLabel
     }()
@@ -56,8 +45,9 @@ final class TrackCell: UICollectionViewCell {
 
     private lazy var actionButton: UIButton = {
         let actionButton = UIButton(type: .system)
-        actionButton.backgroundColor = .backgroundColorDay
+        actionButton.backgroundColor = .ypWhiteDay
         actionButton.setImage(UIImage(named: "plus"), for: .normal)
+        actionButton.tintColor = .ypColorSelection5
         actionButton.layer.cornerRadius = 17
         actionButton.clipsToBounds = true
         actionButton.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
@@ -70,10 +60,8 @@ final class TrackCell: UICollectionViewCell {
     private var completedDaysCount: Int = 0
     private var trackerID: String?
     var selectedDate: Date?
-    private var currentColor: UIColor = .ypColorSelection5
 
     var onButtonTapped: (() -> Void)?
-    var contextMenuProvider: (() -> UIMenu?)?
     
     // MARK: - Init
     
@@ -81,7 +69,6 @@ final class TrackCell: UICollectionViewCell {
         super.init(frame: frame)
         setupViews()
         setupConstraints()
-        setupContextMenu()
     }
     
     required init?(coder: NSCoder) {
@@ -94,35 +81,41 @@ final class TrackCell: UICollectionViewCell {
         contentView.addSubview(cardContainerView)
         cardContainerView.addSubview(trackJobs)
         cardContainerView.addSubview(emojiContainer)
-        emojiContainer.addSubview(trackEmojiLabel)
-        
+        emojiContainer.addSubview(trackEmoji)
         contentView.addSubview(statusLabel)
         contentView.addSubview(actionButton)
     }
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
+            // Контейнер
             cardContainerView.topAnchor.constraint(equalTo: contentView.topAnchor),
             cardContainerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             cardContainerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             cardContainerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -60),
             
+            // Задание трекера
             trackJobs.trailingAnchor.constraint(equalTo: cardContainerView.trailingAnchor, constant: -12),
             trackJobs.bottomAnchor.constraint(equalTo: cardContainerView.bottomAnchor, constant: -12),
             trackJobs.leadingAnchor.constraint(equalTo: cardContainerView.leadingAnchor, constant: 12),
             
+            // Картинка эмоджи
             emojiContainer.topAnchor.constraint(equalTo: cardContainerView.topAnchor, constant: 12),
             emojiContainer.leadingAnchor.constraint(equalTo: cardContainerView.leadingAnchor, constant: 12),
             emojiContainer.widthAnchor.constraint(equalToConstant: 24),
             emojiContainer.heightAnchor.constraint(equalToConstant: 24),
             
-            trackEmojiLabel.centerXAnchor.constraint(equalTo: emojiContainer.centerXAnchor),
-            trackEmojiLabel.centerYAnchor.constraint(equalTo: emojiContainer.centerYAnchor),
+            trackEmoji.centerXAnchor.constraint(equalTo: emojiContainer.centerXAnchor),
+            trackEmoji.centerYAnchor.constraint(equalTo: emojiContainer.centerYAnchor),
+            trackEmoji.widthAnchor.constraint(equalToConstant: 16),
+            trackEmoji.heightAnchor.constraint(equalToConstant: 16),
             
+            // Статус (счетчик дней)
             statusLabel.topAnchor.constraint(equalTo: cardContainerView.bottomAnchor, constant: 16),
             statusLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12),
             statusLabel.centerYAnchor.constraint(equalTo: actionButton.centerYAnchor),
             
+            // Кнопка
             actionButton.topAnchor.constraint(equalTo: cardContainerView.bottomAnchor, constant: 8),
             actionButton.trailingAnchor.constraint(equalTo: cardContainerView.trailingAnchor, constant: -12),
             actionButton.widthAnchor.constraint(equalToConstant: 34),
@@ -130,19 +123,25 @@ final class TrackCell: UICollectionViewCell {
         ])
     }
     
-    // MARK: - Context Menu Setup
-    
-    private func setupContextMenu() {
-        let interaction = UIContextMenuInteraction(delegate: self)
-        cardContainerView.addInteraction(interaction)
-    }
-    
     // MARK: - Actions
     
     @objc private func buttonTapped() {
-        AppMetrica.reportEvent(name: "EVENT", parameters: ["event" :"click","screen" :"main","item" :"track"], onFailure: { error in
-            print("Ошибка отправки метрики: %@", error.localizedDescription)
-        })
+        isCompleted.toggle()
+        updateButtonAppearance()
+        
+        if isCompleted {
+            completedDaysCount += 1
+            updateStatusLabel()
+            if let date = selectedDate {
+                saveRecord(date: date)
+            }
+        } else {
+            if completedDaysCount > 0 {
+                completedDaysCount -= 1
+                updateStatusLabel()
+            }
+        }
+        
         onButtonTapped?()
     }
     
@@ -169,55 +168,50 @@ final class TrackCell: UICollectionViewCell {
         statusLabel.text = "\(completedDaysCount) \(suffix)"
     }
     
+    private func saveRecord(date: Date) {
+        guard let id = trackerID else { return }
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd.MM.yyyy"
+        let dateString = formatter.string(from: date)
+        
+        let record = TrackerRecord(trackID: id, trackDate: dateString)
+        print("Запись сохранена: \(record)")
+    }
+    
     // MARK: - Configuration
     
-    func configure(id: String, jobsName: String, daysCount: Int, isDone: Bool, date: Date, emoji: String, color: UIColor) {
+    func configure(id: String, jobsName: String, daysCount: Int, isDone: Bool, date: Date?) {
         self.trackerID = id
         self.trackJobs.text = jobsName
         self.completedDaysCount = daysCount
         self.isCompleted = isDone
         self.selectedDate = date
         
-        self.trackEmojiLabel.text = emoji
-        self.cardContainerView.backgroundColor = color
-        self.currentColor = color
-        actionButton.tintColor = color
-        
+        // --- ЛОГИКА ПРОВЕРКИ ДАТЫ ---
         if let selectedDate = selectedDate {
             let calendar = Calendar.current
+            
+            // Сравниваем только год, месяц и день
             let comparison = calendar.compare(selectedDate, to: Date(), toGranularity: .day)
             
+            // .orderedDescending означает, что выбранная дата позже текущей (будущее)
             if comparison == .orderedDescending {
                 actionButton.isUserInteractionEnabled = false
-                actionButton.alpha = 0.5
+                actionButton.alpha = 0.5 // Визуально делаем кнопку неактивной (полупрозрачной)
             } else {
+                // Дата сегодня или в прошлом - кнопка активна
                 actionButton.isUserInteractionEnabled = true
                 actionButton.alpha = 1.0
             }
         } else {
+            // Если дата не передана, по умолчанию активна
             actionButton.isUserInteractionEnabled = true
             actionButton.alpha = 1.0
         }
+        // -----------------------------
         
         updateStatusLabel()
         updateButtonAppearance()
-    }
-}
-
-// MARK: - UIContextMenuInteractionDelegate
-extension TrackCell: UIContextMenuInteractionDelegate {
-    
-    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] suggestedActions in
-            return self?.contextMenuProvider?() ?? UIMenu(title: "", children: [])
-        }
-    }
-    
-    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForHighlightingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
-        return nil
-    }
-    
-    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
-        return nil
     }
 }

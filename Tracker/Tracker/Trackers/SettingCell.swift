@@ -65,7 +65,6 @@ class SettingCell: UITableViewCell {
     }
     
     func configure(title: String, value: String?) {
-        titleLabel.textColor = .lightGray
         titleLabel.text = title
         valueLabel.text = value
     }

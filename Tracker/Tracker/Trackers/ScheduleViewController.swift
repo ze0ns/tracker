@@ -1,3 +1,4 @@
+
 //
 //  ScheduleViewController.swift
 //  Image Feed
@@ -39,7 +40,6 @@ final class ScheduleViewController: UIViewController {
         tableView.separatorStyle = .singleLine
         tableView.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
         tableView.isScrollEnabled = false
-        tableView.backgroundColor = .ypBackgroundDay
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
@@ -79,7 +79,7 @@ final class ScheduleViewController: UIViewController {
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
-            tableView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 38),
+            tableView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             tableView.heightAnchor.constraint(equalToConstant: CGFloat(weekdays.count * 75)),
@@ -95,6 +95,7 @@ final class ScheduleViewController: UIViewController {
         tableView.register(SwitchCell.self, forCellReuseIdentifier: "SwitchCell")
         tableView.dataSource = self
         tableView.delegate = self
+        tableView.backgroundColor = .white
     }
     
     private func setupActions() {
@@ -191,6 +192,7 @@ class SwitchCell: UITableViewCell {
         let switchControl = UISwitch()
         switchControl.onTintColor = .systemBlue
         switchControl.translatesAutoresizingMaskIntoConstraints = false
+
         return switchControl
     }()
     
@@ -206,8 +208,7 @@ class SwitchCell: UITableViewCell {
     
     // MARK: - Setup
     private func setupView() {
-        backgroundColor = .clear
-        contentView.backgroundColor = .clear
+        backgroundColor = .white
         selectionStyle = .none
         
         contentView.addSubview(dayLabel)

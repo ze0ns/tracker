@@ -1,10 +1,3 @@
-
-//
-//  CreateTrackerViewController.swift
-//  Image Feed
-//
-//  Created by Oschepkov Aleksandr on 09.03.2026.
-//
 import UIKit
 
 final class CustomTabBar: UIView {
@@ -16,10 +9,8 @@ final class CustomTabBar: UIView {
     var height: CGFloat = 83 {
         didSet { setNeedsLayout() }
     }
-    
     private var items: [UITabBarItem] = []
     private var buttons: [UIButton] = []
-    
     init(items: [UITabBarItem]) {
         self.items = items
         super.init(frame: .zero)
@@ -30,72 +21,43 @@ final class CustomTabBar: UIView {
     required init?(coder: NSCoder) {
         nil
     }
-    
     // MARK: - Private Methods
     private func setupViews() {
         for (index, item) in items.enumerated() {
-            var config = UIButton.Configuration.plain()
-            config.title = item.title
-            config.image = item.image?.withRenderingMode(.alwaysTemplate)
-            config.imagePlacement = .top
-            config.imagePadding = 4.0
-            
-  
-            var bgConfig = UIBackgroundConfiguration.clear()
-            
-  
-            bgConfig.backgroundColorTransformer = UIConfigurationColorTransformer { [weak self] color in
-                return .clear
-            }
-            
-            config.background = bgConfig
-            
-
-            config.baseForegroundColor = .secondaryLabel
-            
-
-            let button = UIButton(configuration: config)
+            let button = UIButton(type: .custom)
             button.tag = index
+            button.setTitle(item.title, for: .normal)
             
-
-            button.configuration?.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                var outgoing = incoming
-                outgoing.font = .systemFont(ofSize: 10, weight: .medium)
-                return outgoing
+            if let image = item.image {
+                button.setImage(
+                    image.withRenderingMode(.alwaysTemplate),
+                    for: .normal
+                )
             }
+            button.setTitleColor(.secondaryLabel, for: .normal)
+            button.setTitleColor(.label, for: .selected)
+            button.tintColor = .secondaryLabel
             
             button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
-
             buttons.append(button)
             addSubview(button)
         }
         
         updateSelection()
     }
-    
     // MARK: - Actions
     @objc private func buttonTapped(_ sender: UIButton) {
         selectedIndex = sender.tag
         onItemSelected?(selectedIndex)
+        
     }
-    
     private func updateSelection() {
         for (index, button) in buttons.enumerated() {
             button.isSelected = (index == selectedIndex)
-            
-            let color: UIColor = index == selectedIndex ? .systemBlue : .secondaryLabel
-            
-            var config = button.configuration
-            config?.baseForegroundColor = color
-            if !button.isHighlighted {
-                 config?.background.backgroundColor = .clear
-            }
-            
-            button.configuration = config
+            button.tintColor = index == selectedIndex ? .blue : .gray
         }
     }
-    
-    // MARK: - Layout
+    // MARK: - Public Methods , UI
     override func layoutSubviews() {
         super.layoutSubviews()
         
@@ -109,10 +71,18 @@ final class CustomTabBar: UIView {
                 width: width,
                 height: height
             )
+            
+            button.imageEdgeInsets = UIEdgeInsets(top: 6, left: 0, bottom: 2, right: 0)
+            button.titleEdgeInsets = UIEdgeInsets(
+                top: 0,
+                left: -button.imageView!.frame.width,
+                bottom: -6,
+                right: 0
+            )
         }
     }
-    
     override var intrinsicContentSize: CGSize {
         return CGSize(width: UIView.noIntrinsicMetric, height: height)
     }
 }
+
