@@ -20,6 +20,18 @@ final class CreateTrackerViewController: UIViewController {
     // Замыкание для передачи данных
     var onTrackerCreated: ((Tracker, String) -> Void)?
     
+    weak var trackerStore: TrackerStore?
+    
+    // 2. Создаем кастомный инициализатор
+    init(trackerStore: TrackerStore) {
+        self.trackerStore = trackerStore
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    // Обязательный инициализатор для storyboard/xib (если используется)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     // MARK: - UI Elements
     
     private let titleLabel: UILabel = {
@@ -99,12 +111,13 @@ final class CreateTrackerViewController: UIViewController {
     
     // MARK: - Actions
     @objc private func habitButtonTapped() {
-        let newHabitVC = NewHabitViewController()
+        guard let store = trackerStore else { return }
+        let newHabitVC = NewHabitViewController(trackerStore: store)
         
         // ПЕРЕДАЕМ ЗАМЫКАНИЕ ДАЛЬШЕ
         newHabitVC.onTrackerCreated = { [weak self] tracker, category in
             self?.onTrackerCreated?(tracker, category)
-            self?.dismiss(animated: true) // Закрываем всю цепочку модальных окон
+            self?.dismiss(animated: true)
         }
         let navController = UINavigationController(rootViewController: newHabitVC)
         navController.modalPresentationStyle = .automatic
@@ -112,7 +125,14 @@ final class CreateTrackerViewController: UIViewController {
     }
     
     @objc private func irregularEventButtonTapped() {
-        let secondVC = IrregularHabitViewController()
+        guard let store = trackerStore else { return }
+        let secondVC = IrregularHabitViewController(trackerStore: store)
+        
+        // ПЕРЕДАЕМ ЗАМЫКАНИЕ ДАЛЬШЕ
+        secondVC.onTrackerCreated = { [weak self] tracker, category in
+            self?.onTrackerCreated?(tracker, category)
+            self?.dismiss(animated: true)
+        }
         let navController = UINavigationController(rootViewController: secondVC)
         navController.modalPresentationStyle = .automatic
         self.present(navController, animated: true)

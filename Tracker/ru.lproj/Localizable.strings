@@ -1,0 +1,38 @@
+/* 
+  Localizable.strings
+  Tracker
+
+  Created by Oschepkov Aleksandr on 18.04.2026.
+  
+*/
+/* Main Screen */
+"Trackers" = "Трекеры";
+"Filters" = "Фильтры";
+"Search" = "Поиск";
+"What will we track?" = "Что будем отслеживать?";
+"Nothing found" = "Ничего не найдено";
+"All trackers" = "Все трекеры";
+"Trackers for today" = "Трекеры на сегодня";
+"Completed" = "Завершенные";
+"Uncompleted" = "Незавершенные";
+"Statistics" = "Статистика";
+
+/* Days count */
+"day" = "день";
+"days" = "дней";
+"days_2" = "дня"; // Для чисел 2, 3, 4
+
+/* Actions */
+"Edit" = "Редактировать";
+"Delete" = "Удалить";
+"Pin" = "Закрепить";
+"Unpin" = "Открепить";
+"Cancel" = "Отменить";
+"Delete tracker?" = "Удалить трекер?";
+"Are you sure you want to delete tracker \"%@\"? This action cannot be undone." = "Вы уверены, что хотите удалить трекер «%@»? Это действие нельзя отменить.";
+
+/* Filter Names */
+"All" = "Все";
+"Today" = "Сегодня";
+"Completed Filter" = "Завершённые";
+"Uncompleted Filter" = "Незавершённые";
