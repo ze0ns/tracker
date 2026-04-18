@@ -1,3 +1,10 @@
+
+//
+//  CreateTrackerViewController.swift
+//  Image Feed
+//
+//  Created by Oschepkov Aleksandr on 09.03.2026.
+//
 import UIKit
 
 final class CustomTabBar: UIView {
@@ -9,6 +16,7 @@ final class CustomTabBar: UIView {
     var height: CGFloat = 83 {
         didSet { setNeedsLayout() }
     }
+    
     private var items: [UITabBarItem] = []
     private var buttons: [UIButton] = []
     
@@ -26,23 +34,38 @@ final class CustomTabBar: UIView {
     // MARK: - Private Methods
     private func setupViews() {
         for (index, item) in items.enumerated() {
-            let button = UIButton(type: .custom)
-            button.tag = index
-            button.setTitle(item.title, for: .normal)
+            var config = UIButton.Configuration.plain()
+            config.title = item.title
+            config.image = item.image?.withRenderingMode(.alwaysTemplate)
+            config.imagePlacement = .top
+            config.imagePadding = 4.0
             
-            if let image = item.image {
-                button.setImage(
-                    image.withRenderingMode(.alwaysTemplate),
-                    for: .normal
-                )
+  
+            var bgConfig = UIBackgroundConfiguration.clear()
+            
+  
+            bgConfig.backgroundColorTransformer = UIConfigurationColorTransformer { [weak self] color in
+                return .clear
             }
             
-            // Настройка цветов
-            button.setTitleColor(.secondaryLabel, for: .normal)
-            button.setTitleColor(.label, for: .selected)
-            button.tintColor = .secondaryLabel
+            config.background = bgConfig
+            
+
+            config.baseForegroundColor = .secondaryLabel
+            
+
+            let button = UIButton(configuration: config)
+            button.tag = index
+            
+
+            button.configuration?.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+                var outgoing = incoming
+                outgoing.font = .systemFont(ofSize: 10, weight: .medium)
+                return outgoing
+            }
             
             button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
+
             buttons.append(button)
             addSubview(button)
         }
@@ -59,12 +82,20 @@ final class CustomTabBar: UIView {
     private func updateSelection() {
         for (index, button) in buttons.enumerated() {
             button.isSelected = (index == selectedIndex)
-            // Используем ваши цвета .blue и .gray для примера, или .ypBlackDay/.ypGray
-            button.tintColor = index == selectedIndex ? .blue : .gray
+            
+            let color: UIColor = index == selectedIndex ? .systemBlue : .secondaryLabel
+            
+            var config = button.configuration
+            config?.baseForegroundColor = color
+            if !button.isHighlighted {
+                 config?.background.backgroundColor = .clear
+            }
+            
+            button.configuration = config
         }
     }
     
-    // MARK: - Public Methods , UI
+    // MARK: - Layout
     override func layoutSubviews() {
         super.layoutSubviews()
         
@@ -77,23 +108,6 @@ final class CustomTabBar: UIView {
                 y: 0,
                 width: width,
                 height: height
-            )
-            
-            // 1. Общий отступ содержимого кнопки.
-            // Уменьшаем нижний отступ, чтобы "втолкнуть" контент вверх.
-            button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 40, right: 0)
-            
-            // 2. Смещение иконки.
-            // top: 8 добавляет пространство сверху, поднимая иконку выше относительно центра.
-            // bottom: -8 компенсирует это смещение, чтобы не обрезалось.
-            button.imageEdgeInsets = UIEdgeInsets(top: 8, left: 0, bottom: -8, right: 0)
-            
-            // Если нужно сместить текст (если он есть):
-            button.titleEdgeInsets = UIEdgeInsets(
-                top: 0,
-                left: -(button.imageView?.frame.width ?? 0),
-                bottom: -30, // Опускаем текст еще ниже
-                right: 0
             )
         }
     }

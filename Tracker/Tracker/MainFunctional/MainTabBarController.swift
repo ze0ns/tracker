@@ -39,8 +39,8 @@ final class MainTabBarController: UITabBarController {
         tabBar.addSubview(topBorderView)
         
         NSLayoutConstraint.activate([
-
-  //          tabBar.topAnchor.constraint(equalTo: topBorderView.topAnchor),
+            
+            //          tabBar.topAnchor.constraint(equalTo: topBorderView.topAnchor),
             tabBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tabBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tabBar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -55,8 +55,8 @@ final class MainTabBarController: UITabBarController {
     
     private func createTabItems() -> [UITabBarItem] {
         let items = [
-            createTabBarItem(title: "", imageResource: .tracker, tag: 0),
-            createTabBarItem(title: "", imageResource: .stats, tag: 1)
+            createTabBarItem(title: NSLocalizedString("Trackers", comment: "Trackers button"), imageResource: .trackers, tag: 0),
+            createTabBarItem(title: NSLocalizedString("Statistics", comment: "Statistics button"), imageResource: .statistic, tag: 1)
         ]
         return items.compactMap { $0 }
     }
@@ -110,7 +110,7 @@ extension MainTabBarController {
         guard let tabBar = customTabBar else { return }
         if view.safeAreaInsets.bottom > 0 {
             tabBar.height = customTabBarHeight
-           // tabBar.height = customTabBarHeight + view.safeAreaInsets.bottom
+            // tabBar.height = customTabBarHeight + view.safeAreaInsets.bottom
         }
     }
 }

@@ -45,7 +45,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     
     private lazy var nameFunction: UILabel = {
         let nameFunction = UILabel()
-        nameFunction.text = "Трекеры"
+        nameFunction.text = NSLocalizedString("Trackers", comment: "Main screen title")
         nameFunction.font = .systemFont(ofSize: 34, weight: .bold)
         nameFunction.textColor = .textColorDay
         nameFunction.translatesAutoresizingMaskIntoConstraints = false
@@ -55,7 +55,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     // MARK: - Filter Button
     private lazy var filterButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Фильтры", for: .normal)
+        button.setTitle(NSLocalizedString("Filters", comment: "Filter button"), for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 17, weight: .regular)
         button.setTitleColor(.ypWhiteDay, for: .normal)
         button.backgroundColor = .ypBlue
@@ -77,7 +77,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     
     private lazy var searchTextField: UITextField = {
         let textField = UITextField()
-        textField.placeholder = "Поиск"
+        textField.placeholder = NSLocalizedString("Search", comment: "Search placeholder")
         textField.backgroundColor = .clear
         
         let searchIcon = UIImageView(image: UIImage(systemName: "magnifyingglass"))
@@ -96,7 +96,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         textField.delegate = self
         
         textField.attributedPlaceholder = NSAttributedString(
-            string: "Поиск",
+            string: NSLocalizedString("Search", comment: "Search placeholder"),
             attributes: [NSAttributedString.Key.foregroundColor: UIColor.ypGray]
         )
         
@@ -114,7 +114,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
     
     private lazy var dymmyLabel: UILabel = {
         let dymmyLabel = UILabel()
-        dymmyLabel.text = "Что будем отслеживать?"
+        dymmyLabel.text = NSLocalizedString("What will we track?", comment: "Empty state placeholder")
         dymmyLabel.font = .systemFont(ofSize: 12, weight: .medium)
         dymmyLabel.textColor = .textColorDay
         dymmyLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -125,7 +125,7 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         let picker = UIDatePicker()
         picker.datePickerMode = .date
         picker.preferredDatePickerStyle = .compact
-        picker.locale = Locale(identifier: "ru_RU")
+        picker.locale = Locale(identifier: "ru_RU") // Оставляем русскую локаль для пикера дат
         picker.translatesAutoresizingMaskIntoConstraints = false
         return picker
     }()
@@ -303,9 +303,9 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         dymmyLabel.isHidden = isHidden
         
         if hasTrackersForSelectedDate && visibleCategories.isEmpty {
-            dymmyLabel.text = "Ничего не найдено"
+            dymmyLabel.text = NSLocalizedString("Nothing found", comment: "Placeholder when no results")
         } else {
-            dymmyLabel.text = "Что будем отслеживать?"
+            dymmyLabel.text = NSLocalizedString("What will we track?", comment: "Placeholder when empty")
         }
         
         filterButton.isHidden = !hasTrackersForSelectedDate
@@ -363,11 +363,37 @@ class TrackViewController: UIViewController, NewHabitViewControllerDelegate, Fil
         navController.modalPresentationStyle = .automatic
         self.present(navController, animated: true)
     }
+    
     func didCreateHabit(_ habit: Tracker, category: String) {
         trackerStore.addTracker(habit, toCategory: category)
         collectionView.reloadData()
         updatePlaceholderVisibility()
         print("Трекер '\(habit.name)' добавлен в категорию '\(category)' и сохранен в CoreData")
+    }
+    
+    // MARK: - Helpers for Localization
+    private func localizedStringForDays(_ count: Int) -> String {
+        // Для английского: 1 day, 2 days
+        // Для русского: 1 день, 2 дня, 5 дней
+        
+        let language = Locale.current.language.languageCode?.identifier ?? "en"
+        
+        if language == "ru" {
+            // Русская логика
+            let remainder10 = count % 10
+            let remainder100 = count % 100
+            
+            if remainder10 == 1 && remainder100 != 11 {
+                return NSLocalizedString("day", comment: "1 day")
+            } else if (remainder10 >= 2 && remainder10 <= 4) && (remainder100 < 12 || remainder100 > 14) {
+                return NSLocalizedString("days_2", comment: "2-4 days")
+            } else {
+                return NSLocalizedString("days", comment: "5+ days")
+            }
+        } else {
+            // Английская логика
+            return count == 1 ? NSLocalizedString("day", comment: "1 day") : NSLocalizedString("days", comment: "Days plural")
+        }
     }
 }
 
@@ -400,6 +426,8 @@ extension TrackViewController: UICollectionViewDataSource {
         
         let daysCount = trackerStore.completedTrackers.filter { $0.trackID == tracker.id.uuidString }.count
         
+        let daysString = localizedStringForDays(daysCount)
+        
         cell.configure(
             id: tracker.id.uuidString,
             jobsName: tracker.name,
@@ -412,11 +440,7 @@ extension TrackViewController: UICollectionViewDataSource {
         
         cell.onButtonTapped = { [weak self] in
             guard let self = self else { return }
-            
-            // Переключаем статус записи
             self.trackerStore.toggleTrackerRecord(trackerId: tracker.id.uuidString, date: currentDate)
-            
-            // ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ ДЛЯ СТАТИСТИКИ
             NotificationCenter.default.post(name: .trackerRecordsDidChange, object: nil)
             
             switch self.currentFilter {
@@ -430,19 +454,17 @@ extension TrackViewController: UICollectionViewDataSource {
         cell.contextMenuProvider = { [weak self] in
             guard let self = self else { return nil }
             
-            let editAction = UIAction(title: "Редактировать", image: UIImage(systemName: "pencil")) { _ in
+            let editAction = UIAction(title: NSLocalizedString("Edit", comment: "Menu"), image: UIImage(systemName: "pencil")) { _ in
                 AppMetrica.reportEvent(name: "EVENT", parameters: ["event": "click", "screen": "main", "item": "edit"], onFailure: { error in
                     print("Ошибка отправки метрики: %@", error.localizedDescription)
                 })
                 print("📊 Метрика отправлена: click (item: edit)")
-                print("Нажато: Редактировать \(tracker.name)")
             }
             
-            let deleteAction = UIAction(title: "Удалить", image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
+            let deleteAction = UIAction(title: NSLocalizedString("Delete", comment: "Menu"), image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
                 AppMetrica.reportEvent(name: "EVENT", parameters: ["event": "click", "screen": "main", "item": "delete"], onFailure: { error in
                     print("Ошибка отправки метрики: %@", error.localizedDescription)
                 })
-                print("📊 Метрика отправлена: click (item: delete)")
                 self.deleteTracker(tracker, at: indexPath)
             }
             
@@ -507,20 +529,21 @@ extension TrackViewController: UICollectionViewDelegateFlowLayout {
 // MARK: - Private Helper Methods
 extension TrackViewController {
     private func deleteTracker(_ tracker: Tracker, at indexPath: IndexPath) {
-        let alert = UIAlertController(
-            title: "Удалить трекер?",
-            message: "Вы уверены, что хотите удалить трекер «\(tracker.name)»? Это действие нельзя отменить.",
-            preferredStyle: .alert
-        )
+        let titleStr = NSLocalizedString("Delete tracker?", comment: "Alert title")
+        let messageStr = String(format: NSLocalizedString("Are you sure you want to delete tracker \"%@\"? This action cannot be undone.", comment: "Alert message"), tracker.name)
+        let deleteStr = NSLocalizedString("Delete", comment: "Alert button")
+        let cancelStr = NSLocalizedString("Cancel", comment: "Alert button")
         
-        let deleteAction = UIAlertAction(title: "Удалить", style: .destructive) { _ in
+        let alert = UIAlertController(title: titleStr, message: messageStr, preferredStyle: .alert)
+        
+        let deleteAction = UIAlertAction(title: deleteStr, style: .destructive) { _ in
             self.trackerStore.deleteTracker(tracker)
             self.trackerStore.loadData()
             self.collectionView.reloadData()
             self.updatePlaceholderVisibility()
         }
         
-        let cancelAction = UIAlertAction(title: "Отменить", style: .cancel)
+        let cancelAction = UIAlertAction(title: cancelStr, style: .cancel)
         
         alert.addAction(deleteAction)
         alert.addAction(cancelAction)
