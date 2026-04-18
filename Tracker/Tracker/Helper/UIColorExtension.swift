@@ -1,15 +1,12 @@
 //
 //  UIColorExtension.swift
-//  Tracker
+//  Project: Tracker
+//  Created by Oschepkov Aleksandr on 09.03.2026.
 //
-//  Created by Oschepkov Aleksandr on 12.04.2026.
-//
-
 import UIKit
 
 // MARK: - Color Conversion Helper
 extension UIColor {
-    // Метод для сохранения (если его нет в другом месте)
     func toHexString() -> String {
         var red: CGFloat = 0
         var green: CGFloat = 0
@@ -19,14 +16,13 @@ extension UIColor {
         return String(format: "#%02X%02X%02X", Int(red * 255), Int(green * 255), Int(blue * 255))
     }
     
-    // Метод для чтения из CoreData
+    
     convenience init?(hex: String) {
         var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
         var rgb: UInt64 = 0
         guard Scanner(string: hexSanitized).scanHexInt64(&rgb) else { return nil }
         
-        // Поддержка коротких форм (RGB) и полных (RRGGBB)
         let length = hexSanitized.count
         if length == 6 {
             self.init(
@@ -47,33 +43,32 @@ extension UIColor {
         }
     }
     // MARK: - UIColor Extension for Dark Mode Support
-        // Основной цвет фона экрана
-        static let backgroundColorDay: UIColor = UIColor { traitCollection in
-            switch traitCollection.userInterfaceStyle {
-            case .dark:
-                return .ypBlackDay // Черный фон в темной теме
-            default:
-                return .ypWhiteDay // Белый фон в светлой теме
-            }
+    
+    static let backgroundColorDay: UIColor = UIColor { traitCollection in
+        switch traitCollection.userInterfaceStyle {
+        case .dark:
+            return .ypBlackDay
+        default:
+            return .ypWhiteDay
         }
-        
-        // Основной цвет текста/элементов
-        static let textColorDay: UIColor = UIColor { traitCollection in
-            switch traitCollection.userInterfaceStyle {
-            case .dark:
-                return .ypWhiteDay // Белый текст в темной теме
-            default:
-                return .ypBlackDay // Черный текст в светлой теме
-            }
+    }
+    
+    static let textColorDay: UIColor = UIColor { traitCollection in
+        switch traitCollection.userInterfaceStyle {
+        case .dark:
+            return .ypWhiteDay
+        default:
+            return .ypBlackDay 
         }
-
-        static let lineColor: UIColor = UIColor { traitCollection in
-            switch traitCollection.userInterfaceStyle {
-            case .dark:
-                return .ypBlackDay
-            default:
-                return .lightGray
-            }
+    }
+    
+    static let lineColor: UIColor = UIColor { traitCollection in
+        switch traitCollection.userInterfaceStyle {
+        case .dark:
+            return .ypBlackDay
+        default:
+            return .lightGray
         }
-
+    }
+    
 }

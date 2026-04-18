@@ -1,10 +1,8 @@
-
-//
 //  CreateTrackerViewController.swift
-//  Image Feed
-//
+//  Project: Tracker
 //  Created by Oschepkov Aleksandr on 09.03.2026.
 //
+
 import UIKit
 
 final class CustomTabBar: UIView {
@@ -40,24 +38,24 @@ final class CustomTabBar: UIView {
             config.imagePlacement = .top
             config.imagePadding = 4.0
             
-  
+            
             var bgConfig = UIBackgroundConfiguration.clear()
             
-  
+            
             bgConfig.backgroundColorTransformer = UIConfigurationColorTransformer { [weak self] color in
                 return .clear
             }
             
             config.background = bgConfig
             
-
+            
             config.baseForegroundColor = .secondaryLabel
             
-
+            
             let button = UIButton(configuration: config)
             button.tag = index
             
-
+            
             button.configuration?.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
                 var outgoing = incoming
                 outgoing.font = .systemFont(ofSize: 10, weight: .medium)
@@ -65,7 +63,7 @@ final class CustomTabBar: UIView {
             }
             
             button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
-
+            
             buttons.append(button)
             addSubview(button)
         }
@@ -88,7 +86,7 @@ final class CustomTabBar: UIView {
             var config = button.configuration
             config?.baseForegroundColor = color
             if !button.isHighlighted {
-                 config?.background.backgroundColor = .clear
+                config?.background.backgroundColor = .clear
             }
             
             button.configuration = config

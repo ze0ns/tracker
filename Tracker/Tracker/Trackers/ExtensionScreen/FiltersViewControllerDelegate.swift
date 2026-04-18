@@ -1,9 +1,9 @@
 //
 //  FiltersViewControllerDelegate.swift
-//  Tracker
+//  Project: Tracker
+//  Created by Oschepkov Aleksandr on 09.03.2026.
 //
-//  Created by Oschepkov Aleksandr on 12.04.2026.
-//
+
 
 
 import UIKit

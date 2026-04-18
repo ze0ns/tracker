@@ -1,4 +1,8 @@
 // OnboardingViewController.swift
+//  Project: Tracker
+//  Created by Oschepkov Aleksandr on 09.03.2026.
+//
+
 import UIKit
 
 protocol OnboardingViewControllerDelegate: AnyObject {
@@ -112,7 +116,7 @@ class OnboardingViewController: UIViewController {
             startButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             startButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             startButton.heightAnchor.constraint(equalToConstant: 60),
-
+            
         ])
         
         pageControl.numberOfPages = pages.count

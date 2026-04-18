@@ -1,12 +1,10 @@
 //
 //  OnboardingContentViewController.swift
-//  Tracker
-//
-//  Created by Oschepkov Aleksandr on 31.03.2026.
+//  Project: Tracker
+//  Created by Oschepkov Aleksandr on 09.03.2026.
 //
 
 
-// OnboardingContentViewController.swift
 import UIKit
 
 class OnboardingContentViewController: UIViewController {
@@ -28,7 +26,7 @@ class OnboardingContentViewController: UIViewController {
         return label
     }()
     
-
+    
     // MARK: - Properties
     var page: OnboardingPage?
     

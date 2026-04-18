@@ -1,7 +1,6 @@
 //
 //  Tracker.swift
-//  Tracker
-//
+//  Project: Tracker
 //  Created by Oschepkov Aleksandr on 09.03.2026.
 //
 

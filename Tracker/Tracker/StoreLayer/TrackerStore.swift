@@ -1,9 +1,9 @@
 //
 //  TrackerStore.swift
-//  Tracker
+//  Project: Tracker
+//  Created by Oschepkov Aleksandr on 09.03.2026.
 //
-//  Created by Oschepkov Aleksandr on 18.03.2026.
-//
+
 
 import UIKit
 import CoreData
@@ -14,7 +14,6 @@ final class TrackerStore {
     
     private let context: NSManagedObjectContext
     
-    // Имя модели должно совпадать с именем файла .xcdatamodeld
     private let modelName = "TrackersCoreData"
     
     // Кэшированные данные для быстрого доступа
@@ -37,7 +36,6 @@ final class TrackerStore {
     
     private lazy var recordsFetcher: NSFetchedResultsController<TrackerRecordCD> = {
         let fetchRequest: NSFetchRequest<TrackerRecordCD> = TrackerRecordCD.fetchRequest()
-        // ИСПРАВЛЕНО: "date" заменено на "trackDate"
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "trackDate", ascending: true)]
         
         let controller = NSFetchedResultsController(
@@ -64,7 +62,6 @@ final class TrackerStore {
         }
         self.context = container.viewContext
         
-        // Загружаем данные при инициализации
         loadData()
     }
     
@@ -94,7 +91,7 @@ final class TrackerStore {
             print("❌ Ошибка загрузки данных: \(error)")
         }
     }
-
+    
     func addTracker(_ tracker: Tracker, toCategory categoryTitle: String) {
         let fetchRequest: NSFetchRequest<TrackerCategoryCD> = TrackerCategoryCD.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "title == %@", categoryTitle)
@@ -127,16 +124,14 @@ final class TrackerStore {
         let scheduleInts = tracker.schedule.map { $0.rawValue }
         trackerObject.schedule = try? JSONEncoder().encode(scheduleInts)
         
-        // ВАЖНО: Привязываем трекер к категории
         trackerObject.trackercategory = categoryObject
         
-        // Диагностика перед сохранением
         print("💾 Сохраняем трекер '\(tracker.name)' с расписанием: \(tracker.schedule.map { $0.shortName })")
         
         saveContext()
         loadData()
     }
-
+    
     // MARK: - Delete Tracker
     func deleteTracker(_ tracker: Tracker) {
         let fetchRequest: NSFetchRequest<TrackerCD> = TrackerCD.fetchRequest()
@@ -170,25 +165,21 @@ final class TrackerStore {
             print("❌ Ошибка удаления трекера: \(error)")
         }
     }
- 
-    /// Переключает статус выполнения трекера
+    
+    
     func toggleTrackerRecord(trackerId: String, date: Date) {
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
         
-        // Ищем запись
         let fetchRequest: NSFetchRequest<TrackerRecordCD> = TrackerRecordCD.fetchRequest()
-        // ИСПРАВЛЕНО: "trackerId" заменено на "trackID", "date" заменено на "trackDate"
         fetchRequest.predicate = NSPredicate(format: "trackID == %@ AND trackDate == %@", trackerId, startOfDay as NSDate)
         
         do {
             let results = try context.fetch(fetchRequest)
             
             if let existingRecord = results.first {
-                // Если запись есть - удаляем
                 context.delete(existingRecord)
             } else {
-                // Если нет - создаем
                 let newRecord = TrackerRecordCD(context: context)
                 newRecord.trackID = trackerId
                 newRecord.trackDate = startOfDay
@@ -217,13 +208,11 @@ final class TrackerStore {
     private func mapCategory(_ object: TrackerCategoryCD) -> TrackerCategory? {
         guard let title = object.title else { return nil }
         
-        // ВАЖНО: Проверяем, есть ли связь trackers
         guard let trackerSet = object.trackers as? Set<TrackerCD> else {
             print("⚠️ Категория '\(title)' не имеет связи с трекерами (trackers is nil or wrong type)")
             return nil
         }
         
-        // Диагностика: сколько трекеров в этой категории в БД?
         print("   -> Категория '\(title)' содержит \(trackerSet.count) трекеров в БД")
         
         let trackers = trackerSet.compactMap { mapTracker($0) }
@@ -235,9 +224,8 @@ final class TrackerStore {
               let idString = object.id,
               let id = UUID(uuidString: idString) else { return nil }
         
-        // Восстанавливаем расписание
         var schedule: [Weekday] = []
-       
+        
         
         if let data = object.schedule {
             do {
@@ -262,20 +250,17 @@ final class TrackerStore {
         guard let trackerId = object.trackID,
               let date = object.trackDate else { return nil }
         
-        // Если ваш TrackerRecord хранит дату как String, нужно отформатировать
+        
         let formatter = DateFormatter()
         formatter.dateFormat = "dd.MM.yyyy"
         let dateString = formatter.string(from: date)
         
         return TrackerRecord(trackID: trackerId, trackDate: dateString)
     }
-
-    /// Создает новую категорию
-    /// - Parameter title: Название категории
-    /// - Returns: true если успешно, false если такая категория уже есть
+    
     @discardableResult
     func createCategory(title: String) -> Bool {
-        // Проверяем, существует ли уже такая категория
+        
         let fetchRequest: NSFetchRequest<TrackerCategoryCD> = TrackerCategoryCD.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "title == %@", title)
         
@@ -286,12 +271,12 @@ final class TrackerStore {
                 return false
             }
             
-            // Создаем новую
+            
             let newCategory = TrackerCategoryCD(context: context)
             newCategory.title = title
             
             saveContext()
-            loadData() // Обновляем кэш
+            loadData()
             return true
             
         } catch {

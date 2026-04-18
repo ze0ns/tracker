@@ -1,8 +1,7 @@
 //
 //  ImagesListVCProvider.swift
-//  Image Feed
-//
-//  Created by Oschepkov Aleksandr on 31.01.2026.
+//  Project: Tracker
+//  Created by Oschepkov Aleksandr on 09.03.2026.
 //
 
 import SwiftUI

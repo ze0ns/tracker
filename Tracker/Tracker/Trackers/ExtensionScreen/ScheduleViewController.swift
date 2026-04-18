@@ -1,9 +1,9 @@
 //
 //  ScheduleViewController.swift
-//  Image Feed
-//
+//  Project: Tracker
 //  Created by Oschepkov Aleksandr on 09.03.2026.
 //
+
 
 import UIKit
 
@@ -234,13 +234,5 @@ class SwitchCell: UITableViewCell {
         dayLabel.text = day
         switchControl.isOn = isOn
         switchControl.tag = tag
-    }
-}
-
-//MARK: SwiftUI - for working canvas
-import SwiftUI
-struct SchedulePreview: PreviewProvider {
-    static var previews: some View {
-        VCProvider<ScheduleViewController>.previews
     }
 }

@@ -1,9 +1,9 @@
 //
 //  MainTabBarController.swift
-//  temp_ImagesFeed
+//  Project: Tracker
+//  Created by Oschepkov Aleksandr on 09.03.2026.
 //
-//  Created by Oschepkov Aleksandr on 19.01.2026.
-//
+
 import UIKit
 
 final class MainTabBarController: UITabBarController {
@@ -112,13 +112,5 @@ extension MainTabBarController {
             tabBar.height = customTabBarHeight
             // tabBar.height = customTabBarHeight + view.safeAreaInsets.bottom
         }
-    }
-}
-
-//MARK: SwiftUI - for working canvas
-import SwiftUI
-struct MainTabBarControllerProvider: PreviewProvider {
-    static var previews: some View {
-        VCProvider<MainTabBarController>.previews
     }
 }

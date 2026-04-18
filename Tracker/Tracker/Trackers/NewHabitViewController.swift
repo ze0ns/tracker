@@ -1,9 +1,9 @@
 //
 //  NewHabitViewController.swift
-//  Image Feed
-//
+//  Project: Tracker
 //  Created by Oschepkov Aleksandr on 09.03.2026.
 //
+
 
 import UIKit
 
@@ -12,19 +12,17 @@ protocol NewHabitViewControllerDelegate: AnyObject {
 }
 
 final class NewHabitViewController: UIViewController {
-
+    
     // MARK: - Delegate
     weak var delegate: NewHabitViewControllerDelegate?
     var onTrackerCreated: ((Tracker, String) -> Void)?
     weak var trackerStore: TrackerStore?
     
-    // 2. Создаем кастомный инициализатор
     init(trackerStore: TrackerStore) {
         self.trackerStore = trackerStore
         super.init(nibName: nil, bundle: nil)
     }
     
-    // Обязательный инициализатор для storyboard/xib (если используется)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -267,7 +265,6 @@ final class NewHabitViewController: UIViewController {
         createButton.addTarget(self, action: #selector(createButtonTapped), for: .touchUpInside)
         nameTextField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
         
-        // Добавляем жест для скрытия клавиатуры по тапу
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(hideKeyboard))
         tapGesture.cancelsTouchesInView = false
         view.addGestureRecognizer(tapGesture)
@@ -292,27 +289,24 @@ final class NewHabitViewController: UIViewController {
         guard let name = nameTextField.text, !name.isEmpty else { return }
         let category = selectedCategory
         
-        // Получаем выбранные значения или значения по умолчанию
         let emoji = selectedEmoji ?? "🙂"
         let uiColor = selectedColor ?? .ypColorSelection1
         
-        // Преобразуем UIColor в Hex String для сохранения в CoreData
         let colorHex = uiColor.toHexString()
         
-        // Создаем трекер
+        
         let tracker = Tracker(
             name: name,
-            color: colorHex, // Передаем строку (например, "#FF5733")
+            color: colorHex,
             emodji: emoji,
             schedule: selectedSchedule,
             isPinned: false
         )
         
-        // Сохраняем через делегат или замыкание
+        
         delegate?.didCreateHabit(tracker, category: category)
         onTrackerCreated?(tracker, category)
         
-        // Закрываем экран
         presentingViewController?.dismiss(animated: true)
     }
     
@@ -325,7 +319,7 @@ final class NewHabitViewController: UIViewController {
     }
     
     private func showCategoryScreen() {
-        // Создаем экран выбора, передаем store и текущую выбранную категорию
+        
         guard let store = trackerStore else { return }
         let selectVC = SelectCategoryViewController(store: store, selectedTitle: selectedCategory)
         selectVC.delegate = self
@@ -334,7 +328,7 @@ final class NewHabitViewController: UIViewController {
         navController.modalPresentationStyle = .automatic
         present(navController, animated: true)
     }
-
+    
     private func showScheduleScreen() {
         let scheduleVC = ScheduleViewController()
         scheduleVC.delegate = self
@@ -433,7 +427,7 @@ extension NewHabitViewController: UICollectionViewDataSource {
         if collectionView == emojiCollectionView {
             cell = collectionView.dequeueReusableCell(withReuseIdentifier: "EmojiCell", for: indexPath)
             
-            // Очищаем ячейку перед переиспользованием
+            
             cell.contentView.subviews.forEach { $0.removeFromSuperview() }
             cell.layer.borderWidth = 0
             cell.backgroundColor = .clear
@@ -445,9 +439,8 @@ extension NewHabitViewController: UICollectionViewDataSource {
             label.frame = cell.contentView.bounds
             cell.contentView.addSubview(label)
             
-            // ЛОГИКА ВЫДЕЛЕНИЯ ЭМОДЗИ
             if emojis[indexPath.item] == selectedEmoji {
-                cell.backgroundColor = .ypBackgroundDay // Серый фон при выборе
+                cell.backgroundColor = .ypBackgroundDay
                 cell.layer.cornerRadius = 16
             }
             
@@ -459,7 +452,6 @@ extension NewHabitViewController: UICollectionViewDataSource {
             cell.layer.cornerRadius = 8
             cell.layer.masksToBounds = true
             
-            // ЛОГИКА ВЫДЕЛЕНИЯ ЦВЕТА
             if color == selectedColor {
                 cell.layer.borderWidth = 3
                 cell.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor // Белая полупрозрачная рамка
@@ -484,16 +476,6 @@ extension NewHabitViewController: UICollectionViewDelegate {
             selectedColor = colors[indexPath.item]
             print("Выбран цвет: \(selectedColor ?? .black)")
         }
-        
-        // Обновляем коллекцию, чтобы показать/скрыть выделение
         collectionView.reloadData()
-    }
-}
-
-// MARK: - SwiftUI for working canvas
-import SwiftUI
-struct CreateHabitPreview: PreviewProvider {
-    static var previews: some View {
-        VCProvider<NewHabitViewController>.previews
     }
 }

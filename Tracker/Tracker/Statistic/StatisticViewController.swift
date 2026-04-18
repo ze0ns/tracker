@@ -1,9 +1,8 @@
 //
 //  StatisticViewController.swift
 //  Tracker
-//
-//
-//  Created by Oschepkov Aleksandr on 12.04.2026.
+//  Project: Tracker
+//  Created by Oschepkov Aleksandr on 09.03.2026.
 //
 
 import UIKit
@@ -19,12 +18,12 @@ extension Notification.Name {
 }
 
 final class StatisticViewController: UIViewController {
-
+    
     // MARK: - Properties
     private let trackerStore = TrackerStore()
     
     private var items: [StatisticItem] = []
-
+    
     // MARK: - UI Elements
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
@@ -34,7 +33,7 @@ final class StatisticViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-
+    
     private lazy var tableView: UITableView = {
         let tableView = UITableView()
         tableView.register(StatisticCell.self, forCellReuseIdentifier: StatisticCell.identifier)
@@ -65,7 +64,7 @@ final class StatisticViewController: UIViewController {
         iv.isHidden = true
         return iv
     }()
-
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -89,7 +88,7 @@ final class StatisticViewController: UIViewController {
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
-
+    
     // MARK: - Setup
     private func setupView() {
         view.backgroundColor = .backgroundColorDay
@@ -98,7 +97,7 @@ final class StatisticViewController: UIViewController {
         view.addSubview(placeholderImage)
         view.addSubview(placeholderLabel)
     }
-
+    
     private func setupConstraints() {
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 44),
@@ -232,11 +231,11 @@ final class GradientBorderView: UIView {
     }
     
     private func updateGradientColors() {
- 
+        
         let startColor: UIColor
         let midleColor: UIColor
         let endColor: UIColor
-
+        
         startColor = .ypGradientRed
         midleColor = .ypGradientGreen
         endColor = .ypGradientBlue
@@ -256,7 +255,7 @@ final class GradientBorderView: UIView {
         
         let lineWidth: CGFloat = 1.0
         
-       
+        
         let path = UIBezierPath(roundedRect: rect, cornerRadius: 16)
         
         shapeLayer.path = path.cgPath

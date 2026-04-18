@@ -1,8 +1,7 @@
 //
 //  IrregularHabit.swift
-//  Tracker
-//
-//  Created by Oschepkov Aleksandr on 10.03.2026.
+//  Project: Tracker
+//  Created by Oschepkov Aleksandr on 09.03.2026.
 //
 
 import UIKit
@@ -17,7 +16,7 @@ final class IrregularHabitViewController: UIViewController {
     weak var delegate: IrregularHabitViewControllerDelegate?
     weak var trackerStore: TrackerStore?
     var onTrackerCreated: ((Tracker, String) -> Void)?
-
+    
     init(trackerStore: TrackerStore) {
         self.trackerStore = trackerStore
         super.init(nibName: nil, bundle: nil)
@@ -42,7 +41,7 @@ final class IrregularHabitViewController: UIViewController {
     private var selectedSchedule: [Weekday] = []
     private var selectedDaysCount: Int = 0
     
-
+    
     
     
     // MARK: - UI Elements
@@ -291,17 +290,9 @@ final class IrregularHabitViewController: UIViewController {
         let emoji = selectedEmoji ?? "🙂"
         let color = selectedColor ?? .ypColorSelection1
         
-        // ВАЖНО: Проверьте инициализатор структуры Tracker.
-        // Если параметр 'color' принимает String, вам нужно преобразовать UIColor в строку.
-        // Если параметр 'color' принимает UIColor, передавайте 'color' напрямую.
-        
-        // Пример, если нужен String (вам придется добавить логику получения имени цвета, если она есть):
-        // let colorName = ...
-        
-        // Пример, если принимает UIColor:
         let tracker = Tracker(
             name: name,
-            color: "ColorSelected", // Здесь должна быть ваша логика сохранения цвета
+            color: "ColorSelected", // Здесь должна быть  логика сохранения цвета
             emodji: emoji,
             schedule: selectedSchedule,
             isPinned: false
@@ -321,7 +312,6 @@ final class IrregularHabitViewController: UIViewController {
     }
     
     private func showCategoryScreen() {
-        // Создаем экран выбора, передаем store и текущую выбранную категорию
         guard let store = trackerStore else { return }
         let selectVC = SelectCategoryViewController(store: store, selectedTitle: selectedCategory)
         selectVC.delegate = self
@@ -330,7 +320,7 @@ final class IrregularHabitViewController: UIViewController {
         navController.modalPresentationStyle = .automatic
         present(navController, animated: true)
     }
-
+    
     private func showScheduleScreen() {
         let scheduleVC = ScheduleViewController()
         scheduleVC.delegate = self
@@ -351,7 +341,7 @@ extension IrregularHabitViewController: UITableViewDataSource {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "SettingCell", for: indexPath) as? SettingCell else {
             return UITableViewCell()
         }
-
+        
         cell.configure(title: "Категория", value: selectedCategory)
         cell.backgroundColor = .ypBackgroundDay
         
@@ -465,7 +455,6 @@ extension IrregularHabitViewController: UICollectionViewDelegate {
             print("Выбран цвет: \(selectedColor ?? .black)")
         }
         
-        // Обновляем коллекцию, чтобы показать/скрыть выделение (если нужно)
         collectionView.reloadData()
     }
     
