@@ -1,9 +1,8 @@
 //
 //  StatisticViewController.swift
 //  Tracker
-//
-//
-//  Created by Oschepkov Aleksandr on 12.04.2026.
+//  Project: Tracker
+//  Created by Oschepkov Aleksandr on 09.03.2026.
 //
 
 import UIKit
@@ -19,12 +18,12 @@ extension Notification.Name {
 }
 
 final class StatisticViewController: UIViewController {
-
+    
     // MARK: - Properties
     private let trackerStore = TrackerStore()
     
     private var items: [StatisticItem] = []
-
+    
     // MARK: - UI Elements
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
@@ -34,7 +33,7 @@ final class StatisticViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-
+    
     private lazy var tableView: UITableView = {
         let tableView = UITableView()
         tableView.register(StatisticCell.self, forCellReuseIdentifier: StatisticCell.identifier)
@@ -65,7 +64,7 @@ final class StatisticViewController: UIViewController {
         iv.isHidden = true
         return iv
     }()
-
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -89,7 +88,7 @@ final class StatisticViewController: UIViewController {
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
-
+    
     // MARK: - Setup
     private func setupView() {
         view.backgroundColor = .backgroundColorDay
@@ -98,7 +97,7 @@ final class StatisticViewController: UIViewController {
         view.addSubview(placeholderImage)
         view.addSubview(placeholderLabel)
     }
-
+    
     private func setupConstraints() {
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 44),
@@ -128,11 +127,15 @@ final class StatisticViewController: UIViewController {
         let completedCount = trackerStore.completedTrackers.count
         let perfectDays = calculatePerfectDays()
         
+        // --- НОВАя логика ---
+        let bestPeriod = calculateBestPeriod()
+        let averageValue = calculateAverageValue(completedCount: completedCount)
+        
         items = [
-            StatisticItem(title: "Лучший период", value: 0),
+            StatisticItem(title: "Лучший период", value: bestPeriod),
             StatisticItem(title: "Идеальные дни", value: perfectDays),
             StatisticItem(title: "Трекеров завершено", value: completedCount),
-            StatisticItem(title: "Среднее значение", value: 0)
+            StatisticItem(title: "Среднее значение", value: averageValue)
         ]
         
         tableView.reloadData()
@@ -142,6 +145,8 @@ final class StatisticViewController: UIViewController {
         placeholderImage.isHidden = hasData
         placeholderLabel.isHidden = hasData
     }
+    
+    // MARK: - Statistics Logic
     
     private func calculatePerfectDays() -> Int {
         var perfectDaysCount = 0
@@ -179,6 +184,61 @@ final class StatisticViewController: UIViewController {
         return perfectDaysCount
     }
     
+    // Подсчет лучшего периода (максимальная серия дней подряд)
+    private func calculateBestPeriod() -> Int {
+        let calendar = Calendar.current
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd.MM.yyyy"
+        
+        // 1. Собираем все даты, в которые были выполнения, в объекты Date и сортируем
+        let completedDates = trackerStore.completedTrackers.compactMap { dateFormatter.date(from: $0.trackDate) }.sorted()
+        
+        guard !completedDates.isEmpty else { return 0 }
+        
+        var maxStreak = 1
+        var currentStreak = 1
+        
+        // 2. Проходим по отсортированным датам
+        for i in 1..<completedDates.count {
+            let previousDate = completedDates[i-1]
+            let currentDate = completedDates[i]
+            
+            // Если разница между датами ровно 1 день, увеличиваем серию
+            if calendar.isDate(currentDate, inSameDayAs: previousDate) {
+                // Если это тот же день (было несколько выполнений), просто пропускаем
+                continue
+            } else if calendar.isDate(currentDate, equalTo: previousDate, toGranularity: .day) &&
+                      calendar.dateComponents([.day], from: previousDate, to: currentDate).day == 1 {
+                // Если следующий день
+                currentStreak += 1
+            } else {
+                // Если пропуск больше дня, сбрасываем серию
+                currentStreak = 1
+            }
+            
+            // Обновляем максимум
+            if currentStreak > maxStreak {
+                maxStreak = currentStreak
+            }
+        }
+        
+        // Если была всего одна запись, серия = 1
+        return maxStreak
+    }
+    
+    // Подсчет среднего значения (выполнено / количество активных дней)
+    private func calculateAverageValue(completedCount: Int) -> Int {
+        guard completedCount > 0 else { return 0 }
+        
+        // Считаем количество уникальных дней, в которые что-то выполняли
+        let uniqueDays = Set(trackerStore.completedTrackers.map { $0.trackDate }).count
+        
+        guard uniqueDays > 0 else { return 0 }
+        
+        // Возвращаем среднее, округленное до целого
+        return completedCount / uniqueDays
+    }
+    
     @objc private func handleDataChange() {
         updateStatistics()
     }
@@ -206,7 +266,7 @@ extension StatisticViewController: UITableViewDataSource, UITableViewDelegate {
     }
 }
 
-// MARK: - GradientBorderView (Helper Class for Gradient Stroke)
+// MARK: - GradientBorderView
 final class GradientBorderView: UIView {
     
     private let gradientLayer = CAGradientLayer()
@@ -226,51 +286,30 @@ final class GradientBorderView: UIView {
         gradientLayer.mask = shapeLayer
         gradientLayer.startPoint = CGPoint(x: 0, y: 0.5)
         gradientLayer.endPoint = CGPoint(x: 1, y: 0.5)
-        gradientLayer.locations = [0.0, 1.0]
-        
         updateGradientColors()
     }
     
     private func updateGradientColors() {
- 
-        let startColor: UIColor
-        let midleColor: UIColor
-        let endColor: UIColor
-
-        startColor = .ypGradientRed
-        midleColor = .ypGradientGreen
-        endColor = .ypGradientBlue
+        let startColor = UIColor.ypGradientRed
+        let middleColor = UIColor.ypGradientGreen
+        let endColor = UIColor.ypGradientBlue
         
-        gradientLayer.colors = [startColor.cgColor, midleColor.cgColor, endColor.cgColor]
+        gradientLayer.colors = [startColor.cgColor, middleColor.cgColor, endColor.cgColor]
         gradientLayer.locations = [0.0, 0.5, 1.0]
     }
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        
         updateGradientColors()
-        
         gradientLayer.frame = bounds
         
-        let rect = bounds
-        
         let lineWidth: CGFloat = 1.0
-        
-       
-        let path = UIBezierPath(roundedRect: rect, cornerRadius: 16)
+        let path = UIBezierPath(roundedRect: bounds, cornerRadius: 16)
         
         shapeLayer.path = path.cgPath
         shapeLayer.strokeColor = UIColor.black.cgColor
         shapeLayer.fillColor = UIColor.clear.cgColor
         shapeLayer.lineWidth = lineWidth
-        
-        shapeLayer.strokeStart = 0
-        shapeLayer.strokeEnd = 1
-    }
-    
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        setNeedsLayout()
     }
 }
 
@@ -279,7 +318,6 @@ final class StatisticCell: UITableViewCell {
     
     static let identifier = "StatisticCell"
     
-    // MARK: - UI Elements
     private let containerCardView: UIView = {
         let view = UIView()
         view.backgroundColor = .ypBackgroundDay
@@ -307,7 +345,6 @@ final class StatisticCell: UITableViewCell {
         return label
     }()
     
-    // MARK: - Init
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupView()
@@ -317,7 +354,6 @@ final class StatisticCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    // MARK: - Setup
     private func setupView() {
         backgroundColor = .clear
         selectionStyle = .none
@@ -325,8 +361,6 @@ final class StatisticCell: UITableViewCell {
         contentView.addSubview(containerCardView)
         containerCardView.addSubview(valueLabel)
         containerCardView.addSubview(titleLabel)
-        
-        // Добавляем borderView поверх контейнера
         containerCardView.addSubview(borderView)
         borderView.translatesAutoresizingMaskIntoConstraints = false
         

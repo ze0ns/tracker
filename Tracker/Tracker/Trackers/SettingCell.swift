@@ -1,9 +1,9 @@
 //
 //  SettingCell.swift
-//  Tracker
-//
+//  Project: Tracker
 //  Created by Oschepkov Aleksandr on 09.03.2026.
 //
+
 
 import UIKit
 // MARK: - Setting Cell
