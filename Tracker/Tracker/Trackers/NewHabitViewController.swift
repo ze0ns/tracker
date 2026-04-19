@@ -4,7 +4,6 @@
 //  Created by Oschepkov Aleksandr on 09.03.2026.
 //
 
-
 import UIKit
 
 protocol NewHabitViewControllerDelegate: AnyObject {
@@ -13,13 +12,38 @@ protocol NewHabitViewControllerDelegate: AnyObject {
 
 final class NewHabitViewController: UIViewController {
     
-    // MARK: - Delegate
+    // MARK: - Properties
     weak var delegate: NewHabitViewControllerDelegate?
     var onTrackerCreated: ((Tracker, String) -> Void)?
     weak var trackerStore: TrackerStore?
     
+    // Для редактирования
+    private var existingTracker: Tracker?
+    private var existingCategory: String?
+    
+    // Замыкание для уведомления об обновлении
+    var onTrackerUpdated: ((Tracker, String) -> Void)?
+    
+    // UI Properties
+    private var selectedEmoji: String?
+    private var selectedColor: UIColor?
+    private var selectedCategory: String = "Важное"
+    private var selectedSchedule: [Weekday] = []
+    private var selectedDaysCount: Int = 0
+    
+    // MARK: - Init
+    
+    // Инициализатор для СОЗДАНИЯ
     init(trackerStore: TrackerStore) {
         self.trackerStore = trackerStore
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    // Инициализатор для РЕДАКТИРОВАНИЯ
+    init(trackerStore: TrackerStore, tracker: Tracker, category: String) {
+        self.trackerStore = trackerStore
+        self.existingTracker = tracker
+        self.existingCategory = category
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -27,20 +51,12 @@ final class NewHabitViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
     
-    
     // MARK: - Private Properties
     private let emojis = ["🙂", "😻", "🌺", "🐶", "❤️", "😱", "😇", "😡", "🥶", "🤔", "🙌", "🍔", "🥦", "🏓", "🥇", "🎸", "🏝️", "😪"]
     private let colors: [UIColor] = [.ypColorSelection1, .ypColorSelection2, .ypColorSelection3, .ypColorSelection4, .ypColorSelection5, .ypColorSelection6,
                                      .ypColorSelection7, .ypColorSelection8, .ypColorSelection9, .ypColorSelection10, .ypColorSelection11, .ypColorSelection12,
                                      .ypColorSelection13, .ypColorSelection14, .ypColorSelection15, .ypColorSelection16, .ypColorSelection17, .ypColorSelection18
     ]
-    
-    private var selectedEmoji: String?
-    private var selectedColor: UIColor?
-    
-    private var selectedCategory: String = "Важное"
-    private var selectedSchedule: [Weekday] = []
-    private var selectedDaysCount: Int = 0
     
     // MARK: - UI Elements
     private let scrollView: UIScrollView = {
@@ -169,6 +185,36 @@ final class NewHabitViewController: UIViewController {
         setupTableView()
         setupCollections()
         setupActions()
+        
+        // ИСПРАВЛЕНИЕ: Вызываем настройку данных после создания всех элементов
+        configureForEditing()
+    }
+    
+    // MARK: - Configuration
+    private func configureForEditing() {
+        if let tracker = existingTracker, let category = existingCategory {
+            // Режим редактирования
+            titleLabel.text = "Редактирование привычки"
+            createButton.setTitle("Сохранить", for: .normal)
+            
+            // Заполняем поля
+            nameTextField.text = tracker.name
+            selectedCategory = category
+            selectedSchedule = tracker.schedule
+            selectedEmoji = tracker.emodji
+            selectedColor = UIColor(hex: tracker.color)
+            
+            // ИСПРАВЛЕНИЕ: Принудительно обновляем таблицу и коллекции, чтобы отобразить данные
+            tableView.reloadData()
+            emojiCollectionView.reloadData()
+            colorCollectionView.reloadData()
+        } else {
+            // Режим создания
+            titleLabel.text = "Новая привычка"
+            createButton.setTitle("Создать", for: .normal)
+        }
+        
+        updateCreateButtonState()
     }
     
     // MARK: - Setup Methods
@@ -242,13 +288,12 @@ final class NewHabitViewController: UIViewController {
             buttonsStackView.heightAnchor.constraint(equalToConstant: 60)
         ])
     }
+    
     private func setupCollections() {
-        // Настройка Emoji Collection
         emojiCollectionView.dataSource = self
         emojiCollectionView.delegate = self
         emojiCollectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "EmojiCell")
         
-        // Настройка Color Collection
         colorCollectionView.dataSource = self
         colorCollectionView.delegate = self
         colorCollectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "ColorCell")
@@ -290,22 +335,38 @@ final class NewHabitViewController: UIViewController {
         let category = selectedCategory
         
         let emoji = selectedEmoji ?? "🙂"
-        let uiColor = selectedColor ?? .ypColorSelection1
+        let colorHex = selectedColor?.toHexString() ?? ""
         
-        let colorHex = uiColor.toHexString()
-        
-        
-        let tracker = Tracker(
-            name: name,
-            color: colorHex,
-            emodji: emoji,
-            schedule: selectedSchedule,
-            isPinned: false
-        )
-        
-        
-        delegate?.didCreateHabit(tracker, category: category)
-        onTrackerCreated?(tracker, category)
+        if var tracker = existingTracker {
+       
+            tracker.name = name
+            tracker.color = colorHex
+            tracker.emodji = emoji
+            tracker.schedule = selectedSchedule
+
+            trackerStore?.updateTracker(tracker, newCategory: category)
+            
+            if let onUpdated = onTrackerUpdated {
+                onUpdated(tracker, category)
+            } else {
+                onTrackerCreated?(tracker, category)
+            }
+            
+            print("Трекер '\(name)' обновлен")
+            
+        } else {
+
+            let newTracker = Tracker(
+                name: name,
+                color: colorHex,
+                emodji: emoji,
+                schedule: selectedSchedule,
+                isPinned: false
+            )
+            
+            onTrackerCreated?(newTracker, category)
+            print("Трекер '\(name)' создан")
+        }
         
         presentingViewController?.dismiss(animated: true)
     }
@@ -319,7 +380,6 @@ final class NewHabitViewController: UIViewController {
     }
     
     private func showCategoryScreen() {
-        
         guard let store = trackerStore else { return }
         let selectVC = SelectCategoryViewController(store: store, selectedTitle: selectedCategory)
         selectVC.delegate = self
@@ -335,7 +395,6 @@ final class NewHabitViewController: UIViewController {
         scheduleVC.selectedDays = selectedSchedule
         scheduleVC.modalPresentationStyle = .pageSheet
         present(scheduleVC, animated: true)
-        print("ScheduleViewController показан")
     }
 }
 
@@ -427,7 +486,6 @@ extension NewHabitViewController: UICollectionViewDataSource {
         if collectionView == emojiCollectionView {
             cell = collectionView.dequeueReusableCell(withReuseIdentifier: "EmojiCell", for: indexPath)
             
-            
             cell.contentView.subviews.forEach { $0.removeFromSuperview() }
             cell.layer.borderWidth = 0
             cell.backgroundColor = .clear
@@ -454,7 +512,7 @@ extension NewHabitViewController: UICollectionViewDataSource {
             
             if color == selectedColor {
                 cell.layer.borderWidth = 3
-                cell.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor // Белая полупрозрачная рамка
+                cell.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor
             } else {
                 cell.layer.borderWidth = 0
             }
@@ -471,10 +529,8 @@ extension NewHabitViewController: UICollectionViewDelegate {
         
         if collectionView == emojiCollectionView {
             selectedEmoji = emojis[indexPath.item]
-            print("Выбран эмодзи: \(selectedEmoji ?? "")")
         } else {
             selectedColor = colors[indexPath.item]
-            print("Выбран цвет: \(selectedColor ?? .black)")
         }
         collectionView.reloadData()
     }

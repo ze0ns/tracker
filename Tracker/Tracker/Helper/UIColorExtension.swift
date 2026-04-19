@@ -47,27 +47,27 @@ extension UIColor {
     static let backgroundColorDay: UIColor = UIColor { traitCollection in
         switch traitCollection.userInterfaceStyle {
         case .dark:
-            return .ypBlackDay
+             .ypBlackDay
         default:
-            return .ypWhiteDay
+             .ypWhiteDay
         }
     }
     
     static let textColorDay: UIColor = UIColor { traitCollection in
         switch traitCollection.userInterfaceStyle {
         case .dark:
-            return .ypWhiteDay
+             .ypWhiteDay
         default:
-            return .ypBlackDay 
+             .ypBlackDay
         }
     }
     
     static let lineColor: UIColor = UIColor { traitCollection in
         switch traitCollection.userInterfaceStyle {
         case .dark:
-            return .ypBlackDay
+             .ypBlackDay
         default:
-            return .lightGray
+             .lightGray
         }
     }
     

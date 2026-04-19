@@ -165,7 +165,36 @@ final class TrackerStore {
             print("❌ Ошибка удаления трекера: \(error)")
         }
     }
-    
+    func updateTracker(_ tracker: Tracker, newCategory: String) {
+        let fetchRequest: NSFetchRequest<TrackerCD> = TrackerCD.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "id == %@", tracker.id.uuidString)
+        
+        do {
+            let results = try context.fetch(fetchRequest)
+            
+            if let trackerToUpdate = results.first {
+                // Обновляем свойства трекера
+                trackerToUpdate.name = tracker.name
+                trackerToUpdate.color = tracker.color
+                trackerToUpdate.emodji = tracker.emodji
+                let scheduleInts = tracker.schedule.map { $0.rawValue }
+                trackerToUpdate.schedule = try? JSONEncoder().encode(scheduleInts)
+                
+                let categoryRequest: NSFetchRequest<TrackerCategoryCD> = TrackerCategoryCD.fetchRequest()
+                categoryRequest.predicate = NSPredicate(format: "title == %@", newCategory)
+                let newCategoryObject = try? context.fetch(categoryRequest).first
+                
+                if let newCategory = newCategoryObject {
+                    trackerToUpdate.trackercategory = newCategory
+                }
+                
+                saveContext()
+                loadData()
+            }
+        } catch {
+            print("Ошибка обновления трекера: \(error)")
+        }
+    }
     
     func toggleTrackerRecord(trackerId: String, date: Date) {
         let calendar = Calendar.current

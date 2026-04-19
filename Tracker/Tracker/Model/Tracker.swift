@@ -6,11 +6,11 @@
 
 import UIKit
 struct Tracker {
-    let id: UUID
-    let name: String
-    let color: String
-    let emodji: String
-    let schedule: [Weekday]
+    var id: UUID
+    var name: String
+    var color: String
+    var emodji: String
+    var schedule: [Weekday]
     var isPinned: Bool
     
     // Добавляем явный инициализатор со значением по умолчанию для id

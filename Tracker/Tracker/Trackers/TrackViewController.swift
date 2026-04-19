@@ -458,7 +458,19 @@ extension TrackViewController: UICollectionViewDataSource {
                 AppMetrica.reportEvent(name: "EVENT", parameters: ["event": "click", "screen": "main", "item": "edit"], onFailure: { error in
                     print("Ошибка отправки метрики: %@", error.localizedDescription)
                 })
-                print("📊 Метрика отправлена: click (item: edit)")
+                // Используем новый инициализатор
+                let createVC = NewHabitViewController(
+                    trackerStore: self.trackerStore,
+                    tracker: tracker,
+                    category: self.visibleCategories[indexPath.section].nameTrackerCategory
+                )
+                
+                createVC.onTrackerUpdated = { [weak self] updatedTracker, category in
+                    self?.collectionView.reloadData()
+                }
+                
+                let navController = UINavigationController(rootViewController: createVC)
+                self.present(navController, animated: true)
             }
             
             let deleteAction = UIAction(title: NSLocalizedString("Delete", comment: "Menu"), image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
